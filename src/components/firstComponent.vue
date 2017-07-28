@@ -1,0 +1,66 @@
+<template>
+    <div>
+        <h1>First Component<sup class="sup" :class="{clicked: clicked}" @click="show = !show">1</sup></h1>
+        <second-component></second-component>
+
+        <transition name="fade">
+            <p v-if="show">Transition</p>
+        </transition>
+    </div>
+</template>
+
+<script>
+import secondComponent from './secondComponent.vue';
+import { EventBus } from '../event.bus';
+
+export default {
+    data() {
+        return {
+            clicked: false,
+            show: true
+        }
+    },
+    created() {
+        console.log('%c Created.', 'color: #2888e5');
+
+        EventBus.$on('clicked', clicked => {
+            this.clicked = clicked
+        });
+    },
+    mounted() {
+        console.log('%c Mounted.', 'color: #2888e5');
+    },
+    components: {
+        secondComponent
+    }
+}
+</script>
+
+<style lang="sass">
+.sup {
+    height: 24px;
+    width: 24px;
+    color: #ffffff;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 100%;
+    display: inline-block;
+    background-color: #fa0011;
+    
+    &.clicked {
+        background-color: #66a033;
+    }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity .5;
+}
+.fade-enter,
+.fade-leave-to {
+    opacity: 0;
+}
+</style>
+
+
