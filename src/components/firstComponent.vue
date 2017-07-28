@@ -7,7 +7,7 @@
             <p v-if="show" @click="changeTime">Update Time<sup>(click me)</sup></p>
         </transition>
 
-        <div>{{now}}</div>
+        <div v-test>{{now}}</div>
     </div>
 </template>
 
@@ -44,6 +44,11 @@ export default {
     },
     components: {
         secondComponent
+    },
+    directives: {
+        test: function (el, binding, vnode) {
+            console.log(el);
+        }
     }
 }
 </script>
