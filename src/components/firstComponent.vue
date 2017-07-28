@@ -4,7 +4,7 @@
         <second-component></second-component>
 
         <transition name="fade">
-            <p v-if="show" @click="changeTime">Transition</p>
+            <p v-if="show" @click="changeTime">Update Time<sup>(click me)</sup></p>
         </transition>
 
         <div>{{now}}</div>
