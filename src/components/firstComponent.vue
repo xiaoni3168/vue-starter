@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h1>First Component<sup class="sup" :class="{clicked: clicked}" @click="show = !show">1</sup></h1>
+        <h1>First Component<transition name="fade"><sup class="sup" v-if="clicked" :class="{clicked: clicked}" @click="show = !show">1</sup></transition></h1>
         <second-component></second-component>
 
         <transition name="fade">
@@ -55,7 +55,7 @@ export default {
 
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity .5;
+    transition: opacity .5s;
 }
 .fade-enter,
 .fade-leave-to {
