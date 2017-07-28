@@ -4,14 +4,18 @@
         <second-component></second-component>
 
         <transition name="fade">
-            <p v-if="show">Transition</p>
+            <p v-if="show" @click="changeTime">Transition</p>
         </transition>
+
+        <div>{{now}}</div>
     </div>
 </template>
 
 <script>
+import { mapGetters, mapActions } from 'vuex';
 import secondComponent from './secondComponent.vue';
 import { EventBus } from '../event.bus';
+import moment from 'moment';
 
 export default {
     data() {
@@ -29,6 +33,14 @@ export default {
     },
     mounted() {
         console.log('%c Mounted.', 'color: #2888e5');
+    },
+    computed: {
+        ...mapGetters('starter', ['now'])
+    },
+    methods: {
+        changeTime() {
+            this.$store.dispatch('starter/updateNow', +moment())
+        }
     },
     components: {
         secondComponent
