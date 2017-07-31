@@ -7,9 +7,11 @@
             <p v-if="show" @click="changeTime">Update Time<sup>(click me)</sup></p>
         </transition>
 
-        <div>{{now}}</div>
+        <div class="tip-container" v-tooltip="{text: 'Cover Me'}">{{now}}</div>
 
         <input type="text" class="input" @keypress.a="keyPress($event)" @focus="inputFocus($event)" @blur="inputBlur($event)" placeholder="press key 'a'"></input>
+
+        <div class="tip-container" v-tooltip="{text: 'Cover Me'}">Hover Me</div>
     </div>
 </template>
 
@@ -19,8 +21,9 @@ import { mapGetters, mapActions } from 'vuex';
 import secondComponent from './secondComponent.vue';
 import { EventBus } from '../event.bus';
 import moment from 'moment';
+import throttle from 'throttle-debounce/throttle';
 
-var Velocity = require('velocity-animate/velocity');
+const Velocity = require('velocity-animate/velocity');
 
 Vue.config.keyCodes.a = 97;
 
@@ -67,6 +70,16 @@ export default {
             }, 500);
         }
     },
+    directives: {
+        tooltip: {
+            bind: function (el, binding, vnode) {
+                let tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.innerHTML = binding.value.text;
+                el.appendChild(tooltip);
+            }
+        }
+    },
     components: {
         secondComponent
     }
@@ -95,6 +108,40 @@ export default {
     border: 2px solid #999999;
     transform: translateX(50%);
     -webkit-appearance: none;
+}
+
+.tip-container {
+    position: relative;
+    &:hover .tooltip {
+        opacity: 1;
+    }
+}
+
+.tooltip {
+    position: absolute;
+    transition: opacity .5s;
+    opacity: 0;
+    height: 30px;
+    width: 120px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    line-height: 30px;
+    border-radius: 13px;
+    top: 30px;
+    z-index: 100;
+    &:before {
+        content: '';
+        height: 0;
+        width: 0;
+        background-color: #333;
+        position: absolute;
+        border-bottom: 7px solid #333;
+        border-left: 7px solid #fff;
+        border-right: 7px solid #fff;
+        top: -7px;
+        left: 20px;
+    }
 }
 
 .fade-enter-active,
