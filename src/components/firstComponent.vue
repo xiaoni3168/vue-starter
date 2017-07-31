@@ -7,15 +7,22 @@
             <p v-if="show" @click="changeTime">Update Time<sup>(click me)</sup></p>
         </transition>
 
-        <div v-test>{{now}}</div>
+        <div>{{now}}</div>
+
+        <input type="text" class="input" @keypress.a="keyPress($event)" @focus="inputFocus($event)" @blur="inputBlur($event)" placeholder="press key 'a'"></input>
     </div>
 </template>
 
 <script>
+import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import secondComponent from './secondComponent.vue';
 import { EventBus } from '../event.bus';
 import moment from 'moment';
+
+var Velocity = require('velocity-animate/velocity');
+
+Vue.config.keyCodes.a = 97;
 
 export default {
     data() {
@@ -40,15 +47,28 @@ export default {
     methods: {
         changeTime() {
             this.$store.dispatch('starter/updateNow', +moment())
+        },
+
+        keyPress(e) {
+            Velocity(e.target, {
+                borderColor: '#2888e5'
+            }, 500);
+        },
+
+        inputFocus(e) {
+            Velocity(e.target, {
+                borderColor: '#66a033'
+            }, 500);
+        },
+
+        inputBlur(e) {
+            Velocity(e.target, {
+                borderColor: '#999999'
+            }, 500);
         }
     },
     components: {
         secondComponent
-    },
-    directives: {
-        test: function (el, binding, vnode) {
-            console.log(el);
-        }
     }
 }
 </script>
@@ -68,6 +88,12 @@ export default {
     &.clicked {
         background-color: #66a033;
     }
+}
+
+.input {
+    outline: none;
+    border: 2px solid #999999;
+    -webkit-appearance: none;
 }
 
 .fade-enter-active,
