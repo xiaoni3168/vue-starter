@@ -93,6 +93,7 @@ export default {
 .input {
     outline: none;
     border: 2px solid #999999;
+    transform: translateX(50%);
     -webkit-appearance: none;
 }
 
