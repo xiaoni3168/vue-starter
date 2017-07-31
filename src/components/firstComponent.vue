@@ -12,6 +12,8 @@
         <input type="text" class="input" @keypress.a="keyPress($event)" @focus="inputFocus($event)" @blur="inputBlur($event)" placeholder="press key 'a'"></input>
 
         <div class="tip-container" v-tooltip="{text: 'Cover Me'}">Hover Me</div>
+
+        <div style="font-weight: bold;color: #3a009a;" v-change-color>This will text will change color after 3 seconds</div>
     </div>
 </template>
 
@@ -77,6 +79,16 @@ export default {
                 tooltip.className = 'tooltip';
                 tooltip.innerHTML = binding.value.text;
                 el.appendChild(tooltip);
+            }
+        },
+        changeColor: {
+            bind: function (el, binding, vnode) {
+                Velocity(el, {
+                    color: '#cc6310'
+                }, {
+                    delay: 3000,
+                    duration: 700
+                });
             }
         }
     },
