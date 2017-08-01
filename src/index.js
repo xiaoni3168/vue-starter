@@ -4,7 +4,10 @@ import VueRouter from 'vue-router';
 import store from './vuex';
 import firstComponents from './components/firstComponent.vue';
 
+import plugins from './plugins/plugins';
+
 Vue.use(VueRouter);
+Vue.use(plugins);
 
 const routes = [{
     name: 'home',

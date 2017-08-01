@@ -14,6 +14,8 @@
         <div class="tip-container" v-tooltip="{text: 'Cover Me'}">Hover Me</div>
 
         <div style="font-weight: bold;color: #3a009a;" v-change-color>This will text will change color after 3 seconds</div>
+    
+        <svg-component></svg-component>
     </div>
 </template>
 
