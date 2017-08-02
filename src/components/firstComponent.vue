@@ -1,7 +1,9 @@
 <template>
     <div>
         <h1>First Component<transition name="fade"><sup class="sup" v-if="clicked" :class="{clicked: clicked}" @click="show = !show">1</sup></transition></h1>
-        <second-component></second-component>
+        <second-component>
+            <span>(Slot Content)</span>
+        </second-component>
 
         <transition name="fade">
             <p v-if="show" @click="changeTime">Update Time<sup>(click me)</sup></p>

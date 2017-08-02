@@ -1,5 +1,8 @@
 <template>
-    <div class="second_comp" :class="{actived: clicked}" @click="clickComponent">{{computedTitle}}</div>
+    <div class="second_comp" :class="{actived: clicked}" @click="clickComponent">
+        {{computedTitle}}
+        <slot></slot>
+    </div>
 </template>
 
 <script>
@@ -16,6 +19,9 @@ export default {
         computedTitle: function () {
             return 'Second Component computed';
         }
+    },
+    mounted() {
+        console.log(this)
     },
     methods: {
         clickComponent: function() {
