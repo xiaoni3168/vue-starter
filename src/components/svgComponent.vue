@@ -1,10 +1,13 @@
 <template>
-    <svg :height="svgHeight" :width="svgWidth">
+    <svg :height="svgHeight" :width="svgWidth" @mouseenter="hoverd = !hoverd" @mouseleave="hoverd = !hoverd">
         <polyline :points="points" fill="none" stroke="#388" stroke-width="2"></polyline>
-        <polyline :points="points2" fill="none" stroke="#501" stroke-width="2"></polyline>
+        <polyline :points="points2" fill="none" :stroke="tweenCSSColor" stroke-width="2" ref="co"></polyline>
     </svg>
 </template>
 <script>
+import Color from 'color-js';
+import TWEEN from '@tweenjs/tween.js';
+
 export default {
     data: function () {
         let ary = this.generatePoints(0);
@@ -16,12 +19,25 @@ export default {
             interval: null,
             ary: ary,
             ary2: ary2,
+            hoverd: true,
             points: ary.join(' '),
-            points2: ary2.join(' ')
+            points2: ary2.join(' '),
+            tweenColor: {
+                alpha: 1,
+                blue: 0.06666666666666667,
+                green: 0,
+                red: 0.3333333333333333
+            }
         }
     },
     mounted() {
         this.wave();
+    },
+    computed: {
+        tweenCSSColor: function () {
+            console.log('color:',new Color(this.tweenColor))
+            return new Color(this.tweenColor).toCSS();
+        }
     },
     watch: {
         ary: function (n) {
@@ -41,6 +57,20 @@ export default {
                     points2: n.join(' ')
                 }
             )
+        },
+        hoverd: function (n) {
+            let tweenColor = new Color(n ? '#501' : '#289bf0');
+            function animate () {
+                if (TWEEN.update()) {
+                    requestAnimationFrame(animate);
+                }
+            }
+
+            new TWEEN.Tween(this.tweenColor)
+                .to(tweenColor, 500)
+                .start();
+            
+            animate();
         }
     },
     methods: {
