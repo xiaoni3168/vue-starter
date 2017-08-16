@@ -48,7 +48,7 @@ export default {
         });
     },
     mounted() {
-        console.log('%c Mounted.', 'color: #2888e5');
+        console.log(this.$d3);        
     },
     computed: {
         ...mapGetters('starter', ['now'])

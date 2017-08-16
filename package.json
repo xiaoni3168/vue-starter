@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack-dev-server --progress --inline --hot"
   },
   "author": "",
   "license": "MIT",
@@ -30,6 +31,7 @@
   "dependencies": {
     "@tweenjs/tween.js": "^17.1.0",
     "color-js": "^1.0.4",
+    "d3": "^4.10.0",
     "moment": "^2.18.1",
     "throttle-debounce": "^1.0.1",
     "velocity-animate": "^1.5.0",
