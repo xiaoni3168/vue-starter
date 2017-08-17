@@ -8,6 +8,11 @@
                  @mousedown="selectNode"></div>
         </div>
         <div class="content">
+            <div class="zoom-btn">
+                <div class="zoomout" @click="zoomout">+</div>
+                <div class="zoomin" @click="zoomin">-</div>
+                <div class="reset" @click="resetview">&reg;</div>
+            </div>
         </div>
         <transition name="fade">
             <div v-show="openSetting" class="setting-modal" :style="settingStyle"></div>
@@ -15,6 +20,9 @@
     </div>
 </template>
 <script>
+import Vue from 'vue';
+import { mapGetters, mapActions } from 'vuex';
+
 import SvgComponent from './svgComponent.vue';
 import CombineComponent from './d3components/CombineComponent';
 export default {
@@ -35,14 +43,45 @@ export default {
             combineComponent: null,
             movedContext: null,
             openSetting: null,
-            settingStyle: ''
+            settingStyle: '',
+
+            boundary: [2000, 1000],
+            oBoundary: [2000, 1000]
         }
     },
     mounted () {
-        this.container = this.$d3.select('.content').append('svg').attr('height', 500).attr('width', 500);
-        this.container.on('mousemove', this.setNode).on('click', () => { this.openSetting = false });
+        this.container = this.$d3.select('.content').append('svg').attr('width', this.boundary[0]).attr('height', this.boundary[1]).attr('viewBox', `0 0 ${this.boundary[0]} ${this.boundary[1]}`);
+        this.container
+            .on('mousemove', this.setNode)
+            .call(
+                this.$d3.drag()
+                    .on('start', () => {
+                        this.container.attr('class', 'grabbing');
+                    })
+                    .on('drag', () => {
+                        this.container.attr('style', `transform: translate(${this.containerX}px, ${this.containerY}px)`);
+                        this.$store.dispatch('diagram/updateContX', this.containerX + this.$d3.event.dx);
+                        this.$store.dispatch('diagram/updateContY', this.containerY + this.$d3.event.dy);
+                    })
+                    .on('end', () => {
+                        this.container.attr('class', '');
+                    })
+            );
+    },
+    computed: {
+        ...mapGetters('diagram', ['containerX', 'containerY'])
     },
     methods: {
+        zoomout: function () {
+            this.container.attr('viewBox', `0 0 ${this.boundary[0] -= 100} ${this.boundary[1] -= 100}`);
+        },
+        zoomin: function () {
+            this.container.attr('viewBox', `0 0 ${this.boundary[0] += 100} ${this.boundary[1] += 100}`);
+        },
+        resetview: function () {
+            this.container.attr('viewBox', `0 0 ${this.oBoundary[0]} ${this.oBoundary[1]}`);
+            Vue.util.extend(this.boundary, this.oBoundary);
+        },
         selectNode: function (event) {
             let node = event.target;
             this.nodeClone = node.cloneNode(true);
@@ -69,12 +108,6 @@ export default {
                         hook.connector.setIn(hook).repaint();
                     }
                 });
-                // if (this.movedContext.hooks[0].type == 'in') {
-                //     this.movedContext.hooks[0].connector.setOut(this.movedContext.hooks[0]).repaint();
-                // } else {
-                //     this.movedContext.hooks[0].connector.setIn(this.movedContext.hooks[0]).repaint();
-                // }
-                
             }
             if (!this.nodeClone) {
                 return;
@@ -138,105 +171,119 @@ export default {
                                 _this.movedContext = null;
                             }
                         },
-                        d3Rect1: {
-                            x: event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40 - 50,
-                            y: event.offsetY - Math.sqrt(Math.pow(25, 2) / 2) - 40 - 100,
-                            rx: 10,
-                            ry: 10,
-                            width: 100,
-                            height: 100,
-                            strokeWidth: 1,
-                            stroke: '#666666',
-                            strokeDassarray: '5,3',
-                            hooks: [
-                                {
-                                    point: [event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40, event.offsetY - Math.sqrt(Math.pow(25, 2) / 2) - 40],
-                                    updater: (config, uEvent) => {
-                                        return [uEvent.x, uEvent.y + config.height / 2];
-                                    },
-                                    connected: true,
-                                    type: 'out'
+                        d3Rect: [
+                            {
+                                x: event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40 - 50,
+                                y: event.offsetY - Math.sqrt(Math.pow(25, 2) / 2) - 40 - 100,
+                                rx: 10,
+                                ry: 10,
+                                width: 100,
+                                height: 100,
+                                strokeWidth: 1,
+                                fill: '#f5f5f5',
+                                stroke: '#cccccc',
+                                strokeDassarray: '5,3',
+                                boundary: this.boundary,
+                                hooks: [
+                                    {
+                                        // point: [event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40, event.offsetY - Math.sqrt(Math.pow(25, 2) / 2) - 40],
+                                        updater: (config, uEvent) => {
+                                            return [uEvent.x, uEvent.y + config.height / 2];
+                                        },
+                                        connected: true,
+                                        type: 'out',
+                                        position: 'bottom'
+                                    }
+                                ],
+                                onClick: function () {
+                                    _this.$d3.event.stopPropagation();
+                                    _this.openSetting = true;
+                                    _this.settingStyle = {
+                                        transform: `translate(${_this.$d3.event.clientX}px, ${_this.$d3.event.clientY}px)`
+                                    };
+                                },
+                                onDrag: function () {
+                                    this.repaint(_this.$d3.event);
+                                    this.hooks.forEach(hook => {
+                                        if (hook.type == 'in') {
+                                            hook.connector.setOut(hook).repaint();
+                                        } else {
+                                            hook.connector.setIn(hook).repaint();
+                                        }
+                                    });
                                 }
-                            ],
-                            onDbClick: function () {
-                                _this.$d3.event.stopPropagation();
-                                _this.openSetting = true;
-                                _this.settingStyle = {
-                                    transform: `translate(${_this.$d3.event.clientX}px, ${_this.$d3.event.clientY}px)`
-                                };
                             },
-                            onDrag: function () {
-                                this.repaint(_this.$d3.event);
-                                this.hooks.forEach(hook => {
-                                    if (hook.type == 'in') {
-                                        hook.connector.setOut(hook).repaint();
-                                    } else {
-                                        hook.connector.setIn(hook).repaint();
+                            {
+                                x: event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40 - 50,
+                                y: event.offsetY + Math.sqrt(Math.pow(25, 2) / 2) + 40,
+                                rx: 10,
+                                ry: 10,
+                                width: 100,
+                                height: 100,
+                                strokeWidth: 1,
+                                fill: '#f5f5f5',
+                                stroke: '#cccccc',
+                                strokeDassarray: '5,3',
+                                boundary: this.boundary,
+                                hooks: [
+                                    {
+                                        // point: [event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40, event.offsetY + Math.sqrt(Math.pow(25, 2) / 2) + 40],
+                                        updater: (config, uEvent) => {
+                                            return [uEvent.x, uEvent.y - config.height / 2];
+                                        },
+                                        connected: true,
+                                        type: 'out',
+                                        position: 'top'
                                     }
-                                });
-                            }
-                        },
-                        d3Rect2: {
-                            x: event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40 - 50,
-                            y: event.offsetY + Math.sqrt(Math.pow(25, 2) / 2) + 40,
-                            rx: 10,
-                            ry: 10,
-                            width: 100,
-                            height: 100,
-                            strokeWidth: 1,
-                            stroke: '#666666',
-                            strokeDassarray: '5,3',
-                            hooks: [
-                                {
-                                    point: [event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40, event.offsetY + Math.sqrt(Math.pow(25, 2) / 2) + 40],
-                                    updater: (config, uEvent) => {
-                                        return [uEvent.x, uEvent.y - config.height / 2];
-                                    },
-                                    connected: true,
-                                    type: 'out'
+                                ],
+                                onDrag: function () {
+                                    this.repaint(_this.$d3.event);
+                                    this.hooks.forEach(hook => {
+                                        if (hook.type == 'in') {
+                                            hook.connector.setOut(hook).repaint();
+                                        } else {
+                                            hook.connector.setIn(hook).repaint();
+                                        }
+                                    });
                                 }
-                            ],
-                            onDrag: function () {
-                                this.repaint(_this.$d3.event);
-                                this.hooks.forEach(hook => {
-                                    if (hook.type == 'in') {
-                                        hook.connector.setOut(hook).repaint();
-                                    } else {
-                                        hook.connector.setIn(hook).repaint();
+                            },
+                            {
+                                x: event.offsetX + 75,
+                                y: event.offsetY - 50,
+                                rx: 10,
+                                ry: 10,
+                                width: 100,
+                                height: 100,
+                                strokeWidth: 1,
+                                fill: '#f5f5f5',
+                                stroke: '#cccccc',
+                                strokeDassarray: '5,3',
+                                boundary: this.boundary,
+                                hooks: [
+                                    {
+                                        // point: [event.offsetX + 75, event.offsetY],
+                                        updater: (config, uEvent) => {
+                                            return [uEvent.x - config.width / 2, uEvent.y];
+                                        },
+                                        connected: true,
+                                        type: 'in',
+                                        position: 'left'
                                     }
-                                });
-                            }
-                        },
-                        d3Rect3: {
-                            x: event.offsetX + 75,
-                            y: event.offsetY - 50,
-                            rx: 10,
-                            ry: 10,
-                            width: 100,
-                            height: 100,
-                            strokeWidth: 1,
-                            stroke: '#666666',
-                            strokeDassarray: '5,3',
-                            hooks: [
-                                {
-                                    point: [event.offsetX + 75, event.offsetY],
-                                    updater: (config, uEvent) => {
-                                        return [uEvent.x - config.width / 2, uEvent.y];
-                                    },
-                                    connected: true,
-                                    type: 'in'
+                                ],
+                                onDrag: function () {
+                                    this.repaint(_this.$d3.event);
+                                    this.hooks.forEach(hook => {
+                                        if (hook.type == 'in') {
+                                            hook.connector.setOut(hook).repaint();
+                                        } else {
+                                            hook.connector.setIn(hook).repaint();
+                                        }
+                                    });
                                 }
-                            ],
-                            onDrag: function () {
-                                this.repaint(_this.$d3.event);
-                                this.hooks.forEach(hook => {
-                                    if (hook.type == 'in') {
-                                        hook.connector.setOut(hook).repaint();
-                                    } else {
-                                        hook.connector.setIn(hook).repaint();
-                                    }
-                                });
                             }
+                        ],
+                        onClick: () => {
+                            this.openSetting = false;
                         }
                     }).draw();
                     this.prepareDrop = false;
@@ -291,8 +338,41 @@ export default {
         min-width: 500px;
         border: 1px solid #ccc;
         margin: 30px 10px;
-        background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAE5JREFUOBFjYBgFAx8CjLiccPPmTU+g3CyofJq6uvp2bGqZsAlCxWb9//9fBoSBfJhBGMrxGYChGJsAPgPSGBkZn4AwUGMaNs2jYoMlBABmhg8ILwXjzQAAAABJRU5ErkJggg==);
-        background-size: 8px;
+        overflow: scroll;
+
+        .zoom-btn {
+            width: 150px;
+            height: 30px;
+            position: absolute;
+            border: 1px solid #999999;
+            border-radius: 3px;
+            .zoomout {
+                float: left;
+                width: 33%;
+                height: 100%;
+                text-align: center;
+                line-height: 30px;
+                cursor: pointer;
+                border-right: 1px solid #999999;
+            }
+            .zoomin {
+                float: left;
+                width: 32%;
+                height: 100%;
+                text-align: center;
+                line-height: 30px;
+                cursor: pointer;
+                border-right: 1px solid #999999;
+            }
+            .reset {
+                float: left;
+                width: 33%;
+                height: 100%;
+                text-align: center;
+                line-height: 30px;
+                cursor: pointer;
+            }
+        }
     }
     
     .setting-modal {
@@ -301,17 +381,25 @@ export default {
         width: 200px;
         background-color: #f5f5f5;
         border-radius: 5px;
-        box-shadow: 0 0 2px 0px rgba(51,51,51,0.2);
+        box-shadow: 1px 1px 2px 1px rgba(51, 51, 51, 0.2);
         top: 0;
         left: 0;
     }
 
     svg {
+        cursor: -webkit-grab;
+        background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAE5JREFUOBFjYBgFAx8CjLiccPPmTU+g3CyofJq6uvp2bGqZsAlCxWb9//9fBoSBfJhBGMrxGYChGJsAPgPSGBkZn4AwUGMaNs2jYoMlBABmhg8ILwXjzQAAAABJRU5ErkJggg==);
+        background-size: 8px;
+        margin: 10px;
+        &.grabbing {
+            cursor: -webkit-grabbing;
+        }
         circle,rect {
             cursor: move;
             pointer-events: all;
             &:focus {
-                stroke: '#2888e5';
+                stroke: #feb663;
+                outline: none;
             }
         }
     }

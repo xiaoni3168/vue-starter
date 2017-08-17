@@ -20,7 +20,7 @@ export default class D3Rect extends D3Shape {
             .attr('stroke', this.config.stroke || '#333333')
             .attr('stroke-width', this.config.strokeWidth || 1)
             .attr('stroke-dasharray', this.config.strokeDassarray)
-            .attr('z-index', -1)
+            .attr('tabindex', 0)
             .call(
                 d3.drag()
                     .on('drag', () => {
@@ -28,14 +28,29 @@ export default class D3Rect extends D3Shape {
                     })
             )
             .on('click', () => {
-                this.config.onDbClick ? this.config.onDbClick.call(this) : void 0;
+                window.d3.event.stopPropagation();
+                this.plugins && this.plugins.forEach(plugin => {
+                    plugin.context.transition().styleTween('opacity', () => {
+                        return window.d3.interpolateNumber(0, 1);
+                    });
+                });
+                this.config.onClick ? this.config.onClick.call(this) : void 0;
             });
     }
 
-    repaint (event) {
+    repaint (event, updater) {
+        let point;
+        if (updater) {
+            point = updater(event, this.config);
+        }
+        let tPointX = this.boundaryCheck(point ? point[0] : (event.x - this.config.width / 2), [0, this.config.boundary[0]]);
+        let tPointY = this.boundaryCheck(point ? point[1] : (event.y - this.config.height / 2), [0, this.config.boundary[1] - this.config.height]);
         this.context
-            .attr('x', event.x - this.config.width / 2)
-            .attr('y', event.y - this.config.height / 2);
-        this.updateHooks(event);
+            .attr('x', tPointX)
+            .attr('y', tPointY);
+        if (((point ? point[0] : (event.x - this.config.width / 2)) == tPointX) && ((point ? point[1] : (event.y - this.config.height / 2)) == tPointY)) {
+            this.updateHooks(event);
+            this.updatePlugins(event);
+        }
     }
 }

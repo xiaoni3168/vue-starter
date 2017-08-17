@@ -16,7 +16,15 @@ export default class D3Circle extends D3Shape {
             .attr('fill', this.config.fill || 'none')
             .attr('stroke', this.config.stroke || '#333333')
             .attr('stroke-width', this.config.strokeWidth || 1)
-            .on('click', this.config.onClick)
+            .on('click', () => {
+                this.config.onClick ? this.config.onClick.call(this) : void 0;
+            })
+            .on('mouseover', () => {
+                this.config.onMouseOver ? this.config.onMouseOver.call(this) : void 0;
+            })
+            .on('mouseleave', () => {
+                this.config.onMouseLeave ? this.config.onMouseLeave.call(this) : void 0;
+            })
             .call(d3.drag()
                 .on('drag', () => {
                     this.config.onDrag ? this.config.onDrag.call(this) : void 0;

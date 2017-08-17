@@ -24,6 +24,33 @@ export default new Vuex.Store({
             getters: {
                 now: state => moment(state.now).format('Y-M-D HH:mm:ss')
             }
+        },
+        diagram: {
+            namespaced: true,
+            state: {
+                containerX: 0,
+                containerY: 0
+            },
+            mutations: {
+                UPDATE_CONT_X (state, payload) {
+                    state.containerX = payload;
+                },
+                UPDATE_CONT_Y (state, payload) {
+                    state.containerY = payload;
+                }
+            },
+            actions: {
+                updateContX ({ commit }, payload) {
+                    commit('UPDATE_CONT_X', payload);
+                },
+                updateContY ({ commit }, payload) {
+                    commit('UPDATE_CONT_Y', payload);
+                }
+            },
+            getters: {
+                containerX: state => state.containerX,
+                containerY: state => state.containerY
+            }
         }
     }
 });

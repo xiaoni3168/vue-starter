@@ -3,7 +3,7 @@ export default class D3Shape {
         this.container = container;
         this.config = config;
 
-        this.hooks = []
+        this.hooks = [];
     }
 
     setHooks (hooks) {
@@ -11,8 +11,24 @@ export default class D3Shape {
     }
 
     updateHooks (event) {
-        this.hooks.forEach(hook => {
+        this.hooks && this.hooks.forEach(hook => {
             hook.point = hook.updater(this.config, event);
         });
+    }
+
+    updatePlugins (event) {
+        this.plugins && this.plugins.forEach(plugin => {
+            plugin.repaint(event, plugin.config.updater);
+        });
+    }
+
+    boundaryCheck (num, range) {
+        if (num < range[0]) {
+            return range[0];
+        } else if (num > range[1]) {
+            return range[1];
+        } else {
+            return num
+        }
     }
 }
