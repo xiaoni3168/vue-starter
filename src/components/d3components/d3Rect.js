@@ -1,5 +1,7 @@
 import D3Shape from './d3Shape';
 
+import { EventBus } from '../../event.bus';
+
 export default class D3Rect extends D3Shape {
     constructor (container, config) {
         super(container, config);
@@ -29,6 +31,7 @@ export default class D3Rect extends D3Shape {
             )
             .on('click', () => {
                 window.d3.event.stopPropagation();
+                EventBus.$emit('activatedContext', this.config.name);
                 this.plugins && this.plugins.forEach(plugin => {
                     plugin.context.transition().styleTween('opacity', () => {
                         return window.d3.interpolateNumber(0, 1);

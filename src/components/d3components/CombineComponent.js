@@ -7,6 +7,8 @@ import D3Shape from './d3Shape';
 
 import CloseComponent from './CloseComponent';
 
+import { EventBus } from '../../event.bus';
+
 export default class CombineComponent extends D3Shape {
     constructor (container, config) {
         super(container, config);
@@ -14,6 +16,12 @@ export default class CombineComponent extends D3Shape {
         this.config = config;
 
         this.container.map = this.container.map ? this.container.map : {};
+
+        this.activatedContextUUID;
+
+        EventBus.$on('activatedContext', uuid => {
+            this.activatedContextUUID = uuid;
+        });
 
         this.g = new D3G(this.container, this.config.d3G || {})
         this.gContext = this.g.draw();
@@ -32,7 +40,14 @@ export default class CombineComponent extends D3Shape {
         }).draw();
         this.container
             .on('click', () => {
-                window.Dispatch.call('bus', this);
+                if (this.activatedContextUUID) {
+                    this.container.map[this.activatedContextUUID].plugins.forEach(plugin => {
+                        plugin.context.transition().styleTween('opacity', () => {
+                            return window.d3.interpolateNumber(1, 0);
+                        });
+                    });
+                    this.activatedContextUUID = null;
+                }
                 this.config.onClick ? this.config.onClick.call(this) : void 0;
             });
             
@@ -51,10 +66,6 @@ export default class CombineComponent extends D3Shape {
             }));
 
             this.container.map[uuid] = rectContext;
-
-            window.Dispatch.on(`bus.${uuid}`, state => {
-                
-            });
 
             rectContext.plugins = [
                 new D3Rect(gRect, {
