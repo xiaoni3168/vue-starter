@@ -128,20 +128,22 @@ export default {
                             strokeWidth: 2,
                             hooks: [
                                 {
-                                    point: [event.offsetX - Math.sqrt(Math.pow(25, 2) / 2), event.offsetY - Math.sqrt(Math.pow(25, 2) / 2)],
+                                    point: [event.offsetX, event.offsetY - 25],
                                     updater: (config, uEvent) => {
-                                        return [uEvent.x - Math.sqrt(Math.pow(config.r, 2) / 2), uEvent.y - Math.sqrt(Math.pow(config.r, 2) / 2)];
+                                        return [uEvent.x, uEvent.y - 25];
                                     },
                                     connected: true,
-                                    type: 'in'
+                                    type: 'in',
+                                    position: 'top'
                                 },
                                 {
-                                    point: [event.offsetX - Math.sqrt(Math.pow(25, 2) / 2), event.offsetY + Math.sqrt(Math.pow(25, 2) / 2)],
+                                    point: [event.offsetX, event.offsetY + 25],
                                     updater: (config, uEvent) => {
-                                        return [uEvent.x - Math.sqrt(Math.pow(config.r, 2) / 2), uEvent.y + Math.sqrt(Math.pow(config.r, 2) / 2)];
+                                        return [uEvent.x, uEvent.y + 25];
                                     },
                                     connected: true,
-                                    type: 'in'
+                                    type: 'in',
+                                    position: 'bottom'
                                 },
                                 {
                                     point: [event.offsetX + 25, event.offsetY],
@@ -149,7 +151,8 @@ export default {
                                         return [uEvent.x + 25, uEvent.y];
                                     },
                                     connected: true,
-                                    type: 'out'
+                                    type: 'out',
+                                    position: 'right'
                                 }
                             ],
                             onDrag: function () {

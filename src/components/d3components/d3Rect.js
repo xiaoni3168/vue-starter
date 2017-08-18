@@ -7,6 +7,8 @@ export default class D3Rect extends D3Shape {
         super(container, config);
 
         this.context = this.container.append('rect');
+
+        this.position = [this.config.x, this.config.y];
     }
 
     draw () {
@@ -23,20 +25,34 @@ export default class D3Rect extends D3Shape {
             .attr('stroke-width', this.config.strokeWidth || 1)
             .attr('stroke-dasharray', this.config.strokeDassarray)
             .attr('tabindex', 0)
+            .attr('style', this.config.style)
             .call(
                 d3.drag()
                     .on('drag', () => {
                         this.config.onDrag ? this.config.onDrag.call(this) : void 0;
                     })
+                    .on('start', () => {
+                        this.config.onDragStart ? this.config.onDragStart.call(this) : void 0;
+                    })
+                    .on('end', () => {
+                        this.config.onDragEnd ? this.config.onDragEnd.call(this) : void 0;
+                    })
             )
+            .on('mouseover', () => {
+                if (this.type !== 'plugin') {
+                    this.showPlugin();
+                }
+                window.d3.event.stopPropagation();
+                this.config.onMouseOver ? this.config.onMouseOver.call(this) : void 0;
+            })
+            .on('mouseleave', () => {
+                this.hidePlugin();
+            })
             .on('click', () => {
                 window.d3.event.stopPropagation();
+                EventBus.$emit('clearPlugin');
                 EventBus.$emit('activatedContext', this.config.name);
-                this.plugins && this.plugins.forEach(plugin => {
-                    plugin.context.transition().styleTween('opacity', () => {
-                        return window.d3.interpolateNumber(0, 1);
-                    });
-                });
+                // this.showPlugin();
                 this.config.onClick ? this.config.onClick.call(this) : void 0;
             });
     }
@@ -51,9 +67,30 @@ export default class D3Rect extends D3Shape {
         this.context
             .attr('x', tPointX)
             .attr('y', tPointY);
+        this.setPosition(tPointX, tPointY);
         if (((point ? point[0] : (event.x - this.config.width / 2)) == tPointX) && ((point ? point[1] : (event.y - this.config.height / 2)) == tPointY)) {
             this.updateHooks(event);
             this.updatePlugins(event);
         }
+    }
+
+    showPlugin () {
+        this.plugins && this.plugins.forEach(plugin => {
+            plugin.context.transition().styleTween('opacity', () => {
+                return window.d3.interpolateNumber(0, 1);
+            });
+        });
+    }
+
+    hidePlugin () {
+        this.plugins && this.plugins.forEach(plugin => {
+            plugin.context.transition().styleTween('opacity', () => {
+                return window.d3.interpolateNumber(1, 0);
+            }).delay(400);
+        });
+    }
+
+    setPosition (x, y) {
+        this.position = [x, y];
     }
 }

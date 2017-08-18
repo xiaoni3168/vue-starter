@@ -17,27 +17,31 @@ export default class CloseComponent {
     }
 
     draw () {
-        let outline = new D3Circle(this.context, this.config).draw();
+        let outline = new D3Circle(this.context, Object.assign({}, this.config, {
+            updater: (uEvent, config, context) => {
+                this.context.style('transform', 'translate(30px, -30px)');
+            }
+        }));
         let x = new D3Path(this.context, {
             d: `M ${this.config.cx - this.config.r / 3} ${this.config.cy - this.config.r / 3} L ${this.config.cx + this.config.r / 3} ${this.config.cy + this.config.r / 3} M ${this.config.cx + this.config.r / 3} ${this.config.cy - this.config.r / 3} L ${this.config.cx - this.config.r / 3} ${this.config.cy + this.config.r / 3}`,
+            r: this.config.r,
             stroke: '#ffffff',
             strokeWidth: 3,
             strokeLinecap: 'round'
-        }).draw();
+        });
+        outline.draw();
+        x.draw();
 
-        return this;
+        let contexts = [outline, x];
+        contexts.$context = this;
+
+        return contexts;
     }
 
     showClose () {
         this.context
             .transition()
-            .styleTween('opacity', () => {
-                return window.d3.interpolateNumber(0, 1)
-            })
-            .styleTween('transform', () => {
-                return window.d3.interpolateTransformCss(`translate(-20px, 20px)`, `translate(0px, 0px)`);
-            })
-            .duration(300)
+            .style('opacity', () => 1)
             .on('start', () => {
                 this.status = true;
             });
@@ -47,13 +51,7 @@ export default class CloseComponent {
         this.status = false;
         this.context
             .transition()
-            .styleTween('opacity', () => {
-                return window.d3.interpolateNumber(1, 0)
-            })
-            .styleTween('transform', () => {
-                return window.d3.interpolateTransformCss(`translate(0px, 0px)`, `translate(-20px, 20px)`);
-            })
-            .duration(300)
+            .style('opacity', () => 0)
             .on('end', () => {
                 this.status = false;
             });

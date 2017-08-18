@@ -32,10 +32,14 @@ export default class D3Circle extends D3Shape {
             );
     }
 
-    repaint (event) {
+    repaint (event, updater) {
+        if (updater) {
+            updater(event, this.config, this.context);
+        }
         this.context
             .attr('cx', event.x)
             .attr('cy', event.y);
         this.updateHooks(event);
+        this.updatePlugins(event, this.config);
     }
 }
