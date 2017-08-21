@@ -15,7 +15,9 @@
             </div>
         </div>
         <transition name="fade">
-            <div v-show="openSetting" class="setting-modal" :style="settingStyle"></div>
+            <div v-show="openSetting" class="setting-modal" :style="settingStyle">
+                <table-modal :modal="settingModal"></table-modal>
+            </div>
         </transition>
     </div>
 </template>
@@ -25,6 +27,8 @@ import { mapGetters, mapActions } from 'vuex';
 
 import SvgComponent from './svgComponent.vue';
 import CombineComponent from './d3components/CombineComponent';
+
+import TableModal from './modal/TableModal.vue';
 export default {
     data () {
         return {
@@ -46,11 +50,41 @@ export default {
             settingStyle: '',
 
             boundary: [2000, 1000],
-            oBoundary: [2000, 1000]
+            oBoundary: [2000, 1000],
+
+            shape: {
+                circle: {
+                    r: 20
+                },
+                rect: {
+                    height: 80,
+                    width: 80
+                },
+                arrow: {
+                    height: 5
+                }
+            },
+
+            // mock data
+            settingModal: {
+                title: '源表选择',
+                tables: [
+                    {
+                        id: '1',
+                        name: 'A表',
+                        fields: []
+                    },
+                    {
+                        id: '2',
+                        name: 'B表',
+                        fields: []
+                    }
+                ]
+            },
         }
     },
     mounted () {
-        this.container = this.$d3.select('.content').append('svg').attr('width', this.boundary[0]).attr('height', this.boundary[1]).attr('viewBox', `0 0 ${this.boundary[0]} ${this.boundary[1]}`);
+        this.container = this.$d3.select('.content').append('svg').attr('id', 'diagram').attr('width', this.boundary[0]).attr('height', this.boundary[1]).attr('viewBox', `0 0 ${this.boundary[0]} ${this.boundary[1]}`);
         this.container
             .on('mousemove', this.setNode)
             .call(
@@ -120,35 +154,36 @@ export default {
                 if (this.prepareDrop) {
                     const _this = this;
                     this.combineComponent = new CombineComponent(this.container, {
+                        arrow: this.shape.arrow.height,
                         d3Circle: {
                             cx: event.offsetX,
                             cy: event.offsetY,
-                            r: 25,
+                            r: this.shape.circle.r,
                             fill: 'none',
-                            strokeWidth: 2,
+                            strokeWidth: 1,
                             hooks: [
                                 {
-                                    point: [event.offsetX, event.offsetY - 25],
+                                    point: [event.offsetX, event.offsetY - this.shape.circle.r],
                                     updater: (config, uEvent) => {
-                                        return [uEvent.x, uEvent.y - 25];
+                                        return [uEvent.x, uEvent.y - this.shape.circle.r];
                                     },
                                     connected: true,
                                     type: 'in',
                                     position: 'top'
                                 },
                                 {
-                                    point: [event.offsetX, event.offsetY + 25],
+                                    point: [event.offsetX, event.offsetY + this.shape.circle.r],
                                     updater: (config, uEvent) => {
-                                        return [uEvent.x, uEvent.y + 25];
+                                        return [uEvent.x, uEvent.y + this.shape.circle.r];
                                     },
                                     connected: true,
                                     type: 'in',
                                     position: 'bottom'
                                 },
                                 {
-                                    point: [event.offsetX + 25, event.offsetY],
+                                    point: [event.offsetX + this.shape.circle.r, event.offsetY],
                                     updater: (config, uEvent) => {
-                                        return [uEvent.x + 25, uEvent.y];
+                                        return [uEvent.x + this.shape.circle.r, uEvent.y];
                                     },
                                     connected: true,
                                     type: 'out',
@@ -176,12 +211,12 @@ export default {
                         },
                         d3Rect: [
                             {
-                                x: event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40 - 50,
-                                y: event.offsetY - Math.sqrt(Math.pow(25, 2) / 2) - 40 - 100,
+                                x: event.offsetX - this.shape.rect.width,
+                                y: event.offsetY - this.shape.rect.height * 1.5,
                                 rx: 10,
                                 ry: 10,
-                                width: 100,
-                                height: 100,
+                                width: this.shape.rect.width,
+                                height: this.shape.rect.height,
                                 strokeWidth: 1,
                                 fill: '#f5f5f5',
                                 stroke: '#cccccc',
@@ -202,7 +237,7 @@ export default {
                                     _this.$d3.event.stopPropagation();
                                     _this.openSetting = true;
                                     _this.settingStyle = {
-                                        transform: `translate(${_this.$d3.event.clientX}px, ${_this.$d3.event.clientY}px)`
+                                        transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
                                     };
                                 },
                                 onDrag: function () {
@@ -217,12 +252,12 @@ export default {
                                 }
                             },
                             {
-                                x: event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40 - 50,
-                                y: event.offsetY + Math.sqrt(Math.pow(25, 2) / 2) + 40,
+                                x: event.offsetX - this.shape.rect.width,
+                                y: event.offsetY + this.shape.rect.height * 0.5,
                                 rx: 10,
                                 ry: 10,
-                                width: 100,
-                                height: 100,
+                                width: this.shape.rect.width,
+                                height: this.shape.rect.height,
                                 strokeWidth: 1,
                                 fill: '#f5f5f5',
                                 stroke: '#cccccc',
@@ -251,12 +286,12 @@ export default {
                                 }
                             },
                             {
-                                x: event.offsetX + 75,
-                                y: event.offsetY - 50,
+                                x: event.offsetX + this.shape.rect.height * 0.5,
+                                y: event.offsetY - this.shape.rect.height * 0.5,
                                 rx: 10,
                                 ry: 10,
-                                width: 100,
-                                height: 100,
+                                width: this.shape.rect.width,
+                                height: this.shape.rect.height,
                                 strokeWidth: 1,
                                 fill: '#f5f5f5',
                                 stroke: '#cccccc',
@@ -295,6 +330,9 @@ export default {
                 this.nodeClone = null;
             }
         }
+    },
+    components: {
+        'table-modal': TableModal
     }
 }
 </script>
@@ -377,19 +415,40 @@ export default {
             }
         }
     }
-    
+
     .setting-modal {
         position: absolute;
+        color: #f0f0f0;
         height: 260px;
         width: 200px;
-        background-color: #f5f5f5;
+        background-color: #666666;
         border-radius: 5px;
         box-shadow: 1px 1px 2px 1px rgba(51, 51, 51, 0.2);
         top: 0;
         left: 0;
+        &:before {
+            content: ' ';
+            position: absolute;
+            height: 0;
+            width: 0;
+            border-right: 10px solid #666666;
+            border-bottom: 10px solid transparent;
+            border-top: 10px solid transparent;
+            left: -10px;
+            top: 10px;
+        }
+
+        .header {
+            .title {
+                font-size: 14px;
+                text-align: center;
+                height: 30px;
+                line-height: 30px;
+            }
+        }
     }
 
-    svg {
+    svg#diagram {
         cursor: -webkit-grab;
         background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAE5JREFUOBFjYBgFAx8CjLiccPPmTU+g3CyofJq6uvp2bGqZsAlCxWb9//9fBoSBfJhBGMrxGYChGJsAPgPSGBkZn4AwUGMaNs2jYoMlBABmhg8ILwXjzQAAAABJRU5ErkJggg==);
         background-size: 8px;

@@ -47,12 +47,12 @@ export default class D3Rect extends D3Shape {
             })
             .on('mouseleave', () => {
                 this.hidePlugin();
+                this.config.onMouseLeave ? this.config.onMouseLeave.call(this) : void 0;
             })
             .on('click', () => {
                 window.d3.event.stopPropagation();
                 EventBus.$emit('clearPlugin');
                 EventBus.$emit('activatedContext', this.config.name);
-                // this.showPlugin();
                 this.config.onClick ? this.config.onClick.call(this) : void 0;
             });
     }

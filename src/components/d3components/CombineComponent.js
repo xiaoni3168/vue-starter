@@ -85,7 +85,8 @@ export default class CombineComponent extends D3Shape {
                             x2: this.position[0] + 5,
                             y2: this.position[1] + 5,
                             stroke: '#333333',
-                            strokeWidth: 1
+                            strokeWidth: 1,
+                            height: _this.config.arrow
                         });
                         let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
                         let hook = {
@@ -111,7 +112,7 @@ export default class CombineComponent extends D3Shape {
                     },
                     onDragEnd: function () {
                         let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        if (!connectLine.out) {
+                        if (!connectLine.out || connectLine.notActive) {
                             connectLine.destroy();
                         } else {
                             connectLine.in.$parent.hooks.push(connectLine.in);
@@ -149,6 +150,12 @@ export default class CombineComponent extends D3Shape {
                             };
                             connectLine.setOut(hook);
                         }
+                    },
+                    onMouseLeave: function () {
+                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
+                        if (connectLine) {
+                            _this.container.connectLine[_this.container.connectLine.length - 1].notActive = true;
+                        }
                     }
                 }),
                 new D3Rect(gRect, {
@@ -166,7 +173,6 @@ export default class CombineComponent extends D3Shape {
                     onMouseOver: function () {
                         let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
                         if (connectLine) {
-                            console.log(this)
                             let hook = {
                                 $parent: this.$parent,
                                 connected: true,
@@ -179,6 +185,12 @@ export default class CombineComponent extends D3Shape {
                                 }
                             };
                             connectLine.setOut(hook);
+                        }
+                    },
+                    onMouseLeave: function () {
+                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
+                        if (connectLine) {
+                            _this.container.connectLine[_this.container.connectLine.length - 1].notActive = true;
                         }
                     }
                 }),
@@ -193,6 +205,48 @@ export default class CombineComponent extends D3Shape {
                     fill: '#999999',
                     updater: (uEvent, config) => {
                         return [uEvent.x - 5, uEvent.y + rect.height / 2 - 5];
+                    },
+                    onDragStart: function () {
+                        _this.container.connectLine[_this.container.connectLine.length - 1] = new D3Line(_this.gContext, {
+                            x1: this.position[0] + 5,
+                            y1: this.position[1] + 5,
+                            x2: this.position[0] + 5,
+                            y2: this.position[1] + 5,
+                            stroke: '#333333',
+                            strokeWidth: 1,
+                            height: _this.config.arrow
+                        });
+                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
+                        let hook = {
+                            $parent: this.$parent,
+                            connected: true,
+                            connector: connectLine,
+                            point: this.position,
+                            position: 'bottom',
+                            type: 'out',
+                            updater: (config, uEvent) => {
+                                return [uEvent.x, uEvent.y + config.height / 2];
+                            }
+                        }
+                        connectLine.setIn(hook);
+                    },
+                    onDrag: () => {
+                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
+                        connectLine.updateConfig({
+                            x2: window.d3.event.x,
+                            y2: window.d3.event.y
+                        });
+                        connectLine.draw();
+                    },
+                    onDragEnd: function () {
+                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
+                        if (!connectLine.out || connectLine.notActive) {
+                            connectLine.destroy();
+                        } else {
+                            connectLine.in.$parent.hooks.push(connectLine.in);
+                            connectLine.out.$parent.hooks.push(connectLine.out);
+                            _this.container.connectLine.push(null);
+                        }
                     }
                 })
             ];
@@ -236,7 +290,8 @@ export default class CombineComponent extends D3Shape {
                     x2: hook.type !== 'out' ? hook.point[0] : core.config.hooks[$i].point[0],
                     y2: hook.type !== 'out' ? hook.point[1] : core.config.hooks[$i].point[1],
                     stroke: '#333333',
-                    strokeWidth: 1
+                    strokeWidth: 1,
+                    height: this.config.arrow
                 });
                 
                 line.setIn(hook.type === 'out' ? hook : core.config.hooks[$i]);

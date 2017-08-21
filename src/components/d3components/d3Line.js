@@ -33,12 +33,16 @@ export default class D3Line extends D3Shape {
     }
 
     computPath (pointStart, pointEnd) {
-        switch (this.in.position) {
-            case 'right':
+        switch (`${this.in.position} ${this.out ? this.out.position : 'left'}`) {
+            case 'right left':
                 return `M ${pointStart.join(' ')} L ${pointStart[0] + (pointEnd[0] - pointStart[0]) / 2} ${pointStart[1]} L ${pointStart[0] + (pointEnd[0] - pointStart[0]) / 2} ${pointEnd[1]} L ${pointEnd.join(' ')}`;
-            case 'top':
-            case 'bottom':
+            case 'right top':
+                return `M ${pointStart.join(' ')} L ${pointEnd[0]} ${pointStart[1]} L ${pointEnd.join(' ')}`;
+            case 'top bottom':
+            case 'bottom top':
                 return `M ${pointStart.join(' ')} L ${pointStart[0]} ${pointStart[1] + (pointEnd[1] - pointStart[1]) / 2} L ${pointEnd[0]} ${pointStart[1] + (pointEnd[1] - pointStart[1]) / 2} L ${pointEnd.join(' ')}`;
+            case 'bottom left':
+                return `M ${pointStart.join(' ')} L ${pointStart[0]} ${pointEnd[1]} L ${pointEnd.join(' ')}`;
 
         }
     }
@@ -47,20 +51,20 @@ export default class D3Line extends D3Shape {
         if (this.out) {
             switch (this.out.position) {
                 case 'left':
-                    return `M ${pointEnd[0] - 10} ${pointEnd[1] - 5} L ${pointEnd[0] - 10} ${pointEnd[1] + 5} L ${pointEnd.join(' ')} z`;
+                    return `M ${pointEnd[0] - this.config.height} ${pointEnd[1] - this.config.height / 2} L ${pointEnd[0] - this.config.height} ${pointEnd[1] + this.config.height / 2} L ${pointEnd.join(' ')} z`;
                 case 'top':
-                    return `M ${pointEnd[0] + 5} ${pointEnd[1] - 10} L ${pointEnd[0] - 5} ${pointEnd[1] - 10} L ${pointEnd.join(' ')} z`;
+                    return `M ${pointEnd[0] + this.config.height / 2} ${pointEnd[1] - this.config.height} L ${pointEnd[0] - this.config.height / 2} ${pointEnd[1] - this.config.height} L ${pointEnd.join(' ')} z`;
                 case 'bottom':
-                    return `M ${pointEnd[0] + 5} ${pointEnd[1] + 10} L ${pointEnd[0] - 5} ${pointEnd[1] + 10} L ${pointEnd.join(' ')} z`;
+                    return `M ${pointEnd[0] + this.config.height / 2} ${pointEnd[1] + this.config.height} L ${pointEnd[0] - this.config.height / 2} ${pointEnd[1] + this.config.height} L ${pointEnd.join(' ')} z`;
             }
         } else {
             switch (this.in.position) {
                 case 'right':
-                    return `M ${pointEnd[0] - 10} ${pointEnd[1] - 5} L ${pointEnd[0] - 10} ${pointEnd[1] + 5} L ${pointEnd.join(' ')} z`;
+                    return `M ${pointEnd[0] - this.config.height} ${pointEnd[1] - this.config.height / 2} L ${pointEnd[0] - this.config.height} ${pointEnd[1] + this.config.height / 2} L ${pointEnd.join(' ')} z`;
                 case 'top':
-                    return `M ${pointEnd[0] + 5} ${pointEnd[1] - 10} L ${pointEnd[0] - 5} ${pointEnd[1] - 10} L ${pointEnd.join(' ')} z`;
+                    return `M ${pointEnd[0] + this.config.height / 2} ${pointEnd[1] - this.config.height} L ${pointEnd[0] - this.config.height / 2} ${pointEnd[1] - this.config.height} L ${pointEnd.join(' ')} z`;
                 case 'bottom':
-                    return `M ${pointEnd[0] + 5} ${pointEnd[1] + 10} L ${pointEnd[0] - 5} ${pointEnd[1] + 10} L ${pointEnd.join(' ')} z`;
+                    return `M ${pointEnd[0] + this.config.height / 2} ${pointEnd[1] + this.config.height} L ${pointEnd[0] - this.config.height / 2} ${pointEnd[1] + this.config.height} L ${pointEnd.join(' ')} z`;
             }
         }
     }
