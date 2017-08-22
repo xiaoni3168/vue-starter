@@ -9,6 +9,8 @@ export default class D3Rect extends D3Shape {
         this.context = this.container.append('rect');
 
         this.position = [this.config.x, this.config.y];
+
+        this.text = this.container.append('text').attr('id', `uuid_${this.config.name}`);
     }
 
     draw () {
@@ -62,15 +64,38 @@ export default class D3Rect extends D3Shape {
         if (updater) {
             point = updater(event, this.config);
         }
-        let tPointX = this.boundaryCheck(point ? point[0] : (event.x - this.config.width / 2), [0, this.config.boundary[0]]);
-        let tPointY = this.boundaryCheck(point ? point[1] : (event.y - this.config.height / 2), [0, this.config.boundary[1] - this.config.height]);
-        this.context
-            .attr('x', tPointX)
-            .attr('y', tPointY);
-        this.setPosition(tPointX, tPointY);
-        if (((point ? point[0] : (event.x - this.config.width / 2)) == tPointX) && ((point ? point[1] : (event.y - this.config.height / 2)) == tPointY)) {
-            this.updateHooks(event);
-            this.updatePlugins(event);
+        if (event) {
+            let tPointX = this.boundaryCheck(point ? point[0] : (event.x - this.config.width / 2), [0, this.config.boundary[0]]);
+            let tPointY = this.boundaryCheck(point ? point[1] : (event.y - this.config.height / 2), [0, this.config.boundary[1] - this.config.height]);
+            this.context
+                .attr('x', tPointX)
+                .attr('y', tPointY);
+            this.setPosition(tPointX, tPointY);
+            this.drawText([tPointX, tPointY]);
+            if (((point ? point[0] : (event.x - this.config.width / 2)) == tPointX) && ((point ? point[1] : (event.y - this.config.height / 2)) == tPointY)) {
+                this.updateHooks(event);
+                this.updatePlugins(event);
+            }
+        } else {
+            this.context
+                .attr('stroke-dasharray', 'none')
+                .attr('stroke', '#999999')
+                .attr('stroke-width', 2);
+            this.drawText(this.position);
+        }
+    }
+
+    drawText (position) {
+        if (this.config.model && this.config.model.selected.name) {
+            this.container
+                .select(`#uuid_${this.config.name}`)
+                .attr('x', position[0] + this.config.width / 2)
+                .attr('y', position[1] + this.config.height / 2)
+                .attr('font-size', 12)
+                .attr('stroke', '#333333')
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'middle')
+                .text(this.config.model.selected.name);
         }
     }
 

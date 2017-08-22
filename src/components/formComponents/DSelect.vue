@@ -5,9 +5,9 @@
             <input type="text"
                    readonly="readonly"
                    autocomplete="off"
-                   placeholder="请选择源表"
+                   :placeholder="placeholder"
                    :class="{actived: dropdown}"
-                   :value="selected.name"
+                   :value="selectedItem.label"
                    @click="toggleDropdown">
         </div>
         <transition name="d-select--transition-fade">
@@ -18,8 +18,8 @@
                         class="d-select__dropdown-item"
                         @click="selectItem(item)"
                         :key="item.id"
-                        :class="{selected: selected.id === item.id}">
-                        <span>{{item.name}}</span>
+                        :class="{selected: selectedItem.id === item.id}">
+                        <span>{{item.label}}</span>
                     </li>
                 </ul>
             </div>
@@ -30,11 +30,18 @@
 import { directive as onClickaway } from 'vue-clickaway';
 export default {
     props: {
-        items: Array
+        items: Array,
+        placeholder: String,
+        selected: {
+            type: Object,
+            default: function () {
+                return {};
+            }
+        }
     },
     data () {
         return {
-            selected: {},
+            selectedItem: this.selected,
             dropdown: false
         }
     },
@@ -56,7 +63,8 @@ export default {
         selectItem: function (item) {
             this.closeDropdown();
 
-            this.selected = item;
+            this.selectedItem = item;
+            this.$emit('change', this.selectedItem);
         }
     }
 }

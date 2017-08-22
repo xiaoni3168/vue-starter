@@ -8,6 +8,9 @@ export default class D3Shape {
 
     setHooks (hooks) {
         this.hooks = hooks;
+        this.hooks && this.hooks.forEach(hook => {
+            hook.$parent = this;
+        });
     }
 
     updateHooks (event) {
@@ -30,5 +33,12 @@ export default class D3Shape {
         } else {
             return num
         }
+    }
+
+    processDatas (handler) {
+        if (handler && typeof handler === 'function') {
+            return handler(this.hooks);
+        }
+        return this.config.model;
     }
 }

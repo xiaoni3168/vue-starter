@@ -83,6 +83,10 @@ export default class D3Line extends D3Shape {
         this.config = Object.assign({}, this.config, config);
     }
 
+    getOutData () {
+        return this.in.getOutData();
+    }
+
     destroy () {
         this.gContext.remove();
     }

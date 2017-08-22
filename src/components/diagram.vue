@@ -14,24 +14,35 @@
                 <div class="reset" @click="resetview">&reg;</div>
             </div>
         </div>
-        <transition name="fade">
-            <div v-show="openSetting" class="setting-modal" :style="settingStyle">
-                <table-modal :modal="settingModal"></table-modal>
+        <transition name="fade" @before-enter="beforeModalEnter">
+            <div v-if="openSetting" class="setting-modal" :style="settingStyle">
+                <table-modal :element="settingElement" @close="closeModal" @save="saveModal"></table-modal>
             </div>
         </transition>
     </div>
 </template>
 <script>
+/**
+ * 流程图入口文件
+ * 
+ * @author Ani
+ * @description Vue2.0 + D3.js 流程图
+ * 
+ */
 import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 
-import SvgComponent from './svgComponent.vue';
+/**逻辑组件 和表 */
 import CombineComponent from './d3components/CombineComponent';
+import D3Hook from './d3components/d3Hook';
 
+/**点击节点弹出选择modal */
 import TableModal from './modal/TableModal.vue';
+
 export default {
     data () {
         return {
+            /**逻辑组件列表（左侧拖拽的组件） */
             nodes: [
                 {
                     name: 'combineTable',
@@ -39,19 +50,35 @@ export default {
                     id: 1
                 }
             ],
+            /**拖拽生成的临时复制节点 */
             nodeClone: null,
+            /**当临时复制的节点在画布内时，标记为待放置节点 */
             prepareDrop: false,
+            /**画布 */
             container: null,
+            /**标记画布中准备移动的节点 */
+            // TODO: 该移动方式将修改为Drag
             prepareMove: false,
 
+            /**拖拽放置的逻辑组件 */
             combineComponent: null,
+            /**画布中正在移动的节点 */
+            // TODO: 同上
             movedContext: null,
-            openSetting: null,
-            settingStyle: '',
 
+            /**是否打开节点上的设置modal */
+            openSetting: false,
+            /**打开设置modal时，通过style设置其位置 */
+            settingStyle: '',
+            /**设置时选中的元素 */
+            settingElement: {},
+
+            /**画布当前大小 */
             boundary: [2000, 1000],
+            /**画布原始大小 */
             oBoundary: [2000, 1000],
 
+            /**画布中节点元素基础设置 */
             shape: {
                 circle: {
                     r: 20
@@ -71,20 +98,73 @@ export default {
                 tables: [
                     {
                         id: '1',
-                        name: 'A表',
-                        fields: []
+                        name: '用户信息表',
+                        fields: [
+                            {
+                                name: 'id',
+                                description: '用户ID',
+                                type: 'String'
+                            },
+                            {
+                                name: 'name',
+                                description: '用户名',
+                                type: 'String'
+                            },
+                            {
+                                name: 'phone',
+                                description: '电话',
+                                type: 'String'
+                            },
+                            {
+                                name: 'age',
+                                description: '年龄',
+                                type: 'Number'
+                            }
+                        ]
                     },
                     {
                         id: '2',
-                        name: 'B表',
-                        fields: []
+                        name: '购物登记表',
+                        fields: [
+                            {
+                                name: 'id',
+                                description: '主键ID',
+                                type: 'String'
+                            },
+                            {
+                                name: 'uid',
+                                description: '用户ID',
+                                type: 'String'
+                            },
+                            {
+                                name: 'product',
+                                description: '商品名称',
+                                type: 'String'
+                            },
+                            {
+                                name: 'price',
+                                description: '商品单价',
+                                type: 'Number'
+                            },
+                            {
+                                name: 'counts',
+                                description: '购买数量',
+                                type: 'Number'
+                            }
+                        ]
                     }
                 ]
             },
         }
     },
     mounted () {
-        this.container = this.$d3.select('.content').append('svg').attr('id', 'diagram').attr('width', this.boundary[0]).attr('height', this.boundary[1]).attr('viewBox', `0 0 ${this.boundary[0]} ${this.boundary[1]}`);
+        /**初始化画布 */
+        this.container = this.$d3.select('.content')
+                                .append('svg')
+                                .attr('id', 'diagram')
+                                .attr('width', this.boundary[0])
+                                .attr('height', this.boundary[1])
+                                .attr('viewBox', `0 0 ${this.boundary[0]} ${this.boundary[1]}`);
         this.container
             .on('mousemove', this.setNode)
             .call(
@@ -103,19 +183,55 @@ export default {
             );
     },
     computed: {
-        ...mapGetters('diagram', ['containerX', 'containerY'])
+        ...mapGetters('diagram', ['containerX', 'containerY']),
+        settingConfig: function () {
+            return Object.assign({}, this.settingElement.config.model);
+        }
     },
     methods: {
+        /**
+         * 放大画布
+         */
         zoomout: function () {
             this.container.attr('viewBox', `0 0 ${this.boundary[0] -= 100} ${this.boundary[1] -= 100}`);
         },
+
+        /**
+         * 缩小画布
+         */
         zoomin: function () {
             this.container.attr('viewBox', `0 0 ${this.boundary[0] += 100} ${this.boundary[1] += 100}`);
         },
+
+        /**
+         * 重置画布大小
+         */
         resetview: function () {
             this.container.attr('viewBox', `0 0 ${this.oBoundary[0]} ${this.oBoundary[1]}`);
             Vue.util.extend(this.boundary, this.oBoundary);
         },
+
+        /**
+         * 关闭设置modal
+         */
+        closeModal: function () {
+            this.openSetting = false;
+        },
+
+        saveModal: function (settings) {
+            this.closeModal();
+            this.settingElement.config.model.selected = settings;
+            this.settingElement.repaint();
+        },
+
+        beforeModalEnter: function () {
+        },
+
+        /**
+         * 左侧栏中鼠标按下设置临时拖拽的节点
+         * 
+         * @param {Event} event
+         */
         selectNode: function (event) {
             let node = event.target;
             this.nodeClone = node.cloneNode(true);
@@ -127,14 +243,26 @@ export default {
                 document.querySelector('.diagram').appendChild(this.nodeClone);
             });
         },
+
+        /**
+         * 移动临时节点
+         * 
+         * @param {Event} event
+         */
         moveNode: function (event) {
             if (this.nodeClone) {
                 this.nodeClone.style.transform = `translate(${event.x - 25}px, ${event.y - 25}px)`;
             }
         },
+
+        /**
+         * 鼠标在画布中抬起时，标记临时节点为待放置或者绘制移动后的节点
+         */
         setNode: function () {
             if (this.prepareMove) {
+                /**重绘拖动的元素 */
                 this.movedContext.repaint(this.$d3.event);
+                /**元素重绘后，更新该锚点上的连接器的入口出口值并重回连接器 */
                 this.movedContext.hooks.forEach(hook => {
                     if (hook.type == 'in') {
                         hook.connector.setOut(hook).repaint();
@@ -162,7 +290,7 @@ export default {
                             fill: 'none',
                             strokeWidth: 1,
                             hooks: [
-                                {
+                                new D3Hook({
                                     point: [event.offsetX, event.offsetY - this.shape.circle.r],
                                     updater: (config, uEvent) => {
                                         return [uEvent.x, uEvent.y - this.shape.circle.r];
@@ -170,8 +298,8 @@ export default {
                                     connected: true,
                                     type: 'in',
                                     position: 'top'
-                                },
-                                {
+                                }),
+                                new D3Hook({
                                     point: [event.offsetX, event.offsetY + this.shape.circle.r],
                                     updater: (config, uEvent) => {
                                         return [uEvent.x, uEvent.y + this.shape.circle.r];
@@ -179,8 +307,8 @@ export default {
                                     connected: true,
                                     type: 'in',
                                     position: 'bottom'
-                                },
-                                {
+                                }),
+                                new D3Hook({
                                     point: [event.offsetX + this.shape.circle.r, event.offsetY],
                                     updater: (config, uEvent) => {
                                         return [uEvent.x + this.shape.circle.r, uEvent.y];
@@ -188,7 +316,7 @@ export default {
                                     connected: true,
                                     type: 'out',
                                     position: 'right'
-                                }
+                                })
                             ],
                             onDrag: function () {
                                 this.repaint(_this.$d3.event);
@@ -222,19 +350,25 @@ export default {
                                 stroke: '#cccccc',
                                 strokeDassarray: '5,3',
                                 boundary: this.boundary,
+                                model: {
+                                    title: '源表选择',
+                                    tables: this.settingModal.tables,
+                                    type: 'source',
+                                    selected: {}
+                                },
                                 hooks: [
-                                    {
-                                        // point: [event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40, event.offsetY - Math.sqrt(Math.pow(25, 2) / 2) - 40],
+                                    new D3Hook({
                                         updater: (config, uEvent) => {
                                             return [uEvent.x, uEvent.y + config.height / 2];
                                         },
                                         connected: true,
                                         type: 'out',
                                         position: 'bottom'
-                                    }
+                                    })
                                 ],
                                 onClick: function () {
                                     _this.$d3.event.stopPropagation();
+                                    _this.settingElement = this;
                                     _this.openSetting = true;
                                     _this.settingStyle = {
                                         transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
@@ -263,17 +397,30 @@ export default {
                                 stroke: '#cccccc',
                                 strokeDassarray: '5,3',
                                 boundary: this.boundary,
+                                model: {
+                                    title: '源表选择',
+                                    tables: this.settingModal.tables,
+                                    type: 'source',
+                                    selected: {}
+                                },
                                 hooks: [
-                                    {
-                                        // point: [event.offsetX - Math.sqrt(Math.pow(25, 2) / 2) - 40, event.offsetY + Math.sqrt(Math.pow(25, 2) / 2) + 40],
+                                    new D3Hook({
                                         updater: (config, uEvent) => {
                                             return [uEvent.x, uEvent.y - config.height / 2];
                                         },
                                         connected: true,
                                         type: 'out',
                                         position: 'top'
-                                    }
+                                    })
                                 ],
+                                onClick: function () {
+                                    _this.$d3.event.stopPropagation();
+                                    _this.settingElement = this;
+                                    _this.openSetting = true;
+                                    _this.settingStyle = {
+                                        transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
+                                    };
+                                },
                                 onDrag: function () {
                                     this.repaint(_this.$d3.event);
                                     this.hooks.forEach(hook => {
@@ -297,17 +444,29 @@ export default {
                                 stroke: '#cccccc',
                                 strokeDassarray: '5,3',
                                 boundary: this.boundary,
+                                model: {
+                                    title: '联表配置',
+                                    type: 'target',
+                                    sub: 'combine'
+                                },
                                 hooks: [
-                                    {
-                                        // point: [event.offsetX + 75, event.offsetY],
+                                    new D3Hook({
                                         updater: (config, uEvent) => {
                                             return [uEvent.x - config.width / 2, uEvent.y];
                                         },
                                         connected: true,
                                         type: 'in',
                                         position: 'left'
-                                    }
+                                    })
                                 ],
+                                onClick: function () {
+                                    _this.$d3.event.stopPropagation();
+                                    _this.settingElement = this;
+                                    _this.openSetting = true;
+                                    _this.settingStyle = {
+                                        transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
+                                    };
+                                },
                                 onDrag: function () {
                                     this.repaint(_this.$d3.event);
                                     this.hooks.forEach(hook => {
@@ -463,6 +622,9 @@ export default {
                 stroke: #feb663;
                 outline: none;
             }
+        }
+        text {
+            pointer-events: none;
         }
     }
 }

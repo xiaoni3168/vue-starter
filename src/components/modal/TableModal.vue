@@ -1,38 +1,69 @@
 <template>
     <div class="table-modal">
         <div class="header">
-            <div class="title">{{modal.title}}</div>
+            <div class="title">{{model.title}}</div>
         </div>
         <div class="body">
-            <d-select :items="modal.tables"></d-select>
+            <d-select v-if="model.type == 'source'" :items="getSelectDatas(model.tables)" :selected="selected" :placeholder="`选择源表数据`" @change="selectedChange"></d-select>
+            <d-combine v-if="model.type == 'target' && model.sub == 'combine'" :context="element"></d-combine>
         </div>
         <div class="footer">
             <div class="btns">
-                <div class="btn cancel">
-                    <svg height="20" width="20">
-                        <path d="M 5 5 L 15 15 M 5 15 L 15 5" stroke-width="3" stroke="#fff" stroke-linecap="round"></path>
-                    </svg>
+                <div class="btn save" @click="saveModal">
+                    保存
+                </div>
+                <div class="btn cancel" @click="closeModal">
+                    取消
                 </div>
             </div>
         </div>
     </div>
 </template>
 <script>
-import DSelect from '../formComponents/DSelect.vue'
+import DSelect from '../formComponents/DSelect.vue';
+import DCombine from '../formComponents/DCombine.vue';
+
 export default {
     props: {
-        modal: {
+        element: {
             type: Object,
             default: {}
         }
     },
     data () {
+        let { config } = this.element;
         return {
-
+            selected: config.model.selected ? config.model.selected : {},
+            model: config.model ? config.model : {}
+        }
+    },
+    mounted () {
+    },
+    watch: {
+        element: function (n) {
+            
+        }
+    },
+    methods: {
+        getSelectDatas: function (array) {
+            array.forEach(a => {
+                a.label = a.name;
+            });
+            return array;
+        },
+        selectedChange: function (payment) {
+            this.selected = payment;
+        },
+        closeModal: function () {
+            this.$emit('close');
+        },
+        saveModal: function () {
+            this.$emit('save', this.selected);
         }
     },
     components: {
-        'd-select': DSelect
+        'd-select': DSelect,
+        'd-combine': DCombine
     }
 }
 </script>
@@ -48,10 +79,17 @@ export default {
             .btn {
                 float: right;
                 cursor: pointer;
+                font-size: 12px;
+                font-weight: bold;
+                margin: 5px;
                 &.cancel {
-                    path {
-                       stroke: #2888e5; 
-                    }
+                    color: #ff1919;
+                }
+                &.save {
+                    color: #10ea3a;
+                }
+                &:hover {
+                    opacity: .8;
                 }
             }
         }
