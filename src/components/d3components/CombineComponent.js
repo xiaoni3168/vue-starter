@@ -8,6 +8,8 @@ import D3Path from './d3Path';
 import D3Shape from './d3Shape';
 
 import CloseComponent from './CloseComponent';
+import D3Hook from './d3Hook';
+import * as Util from '../../utils';
 
 import { EventBus } from '../../event.bus';
 
@@ -18,6 +20,9 @@ export default class CombineComponent extends D3Shape {
         this.config = config;
 
         this.container.map = this.container.map ? this.container.map : {};
+        this.container.treeMap[this.config.uuid] = {
+            type: 'join'
+        }
 
         this.activatedContextUUID;
 
@@ -48,8 +53,9 @@ export default class CombineComponent extends D3Shape {
             });
             
         let circle = new D3Circle(gCircle, Object.assign({}, this.config.d3Circle, {
-            onClick: () => {
+            onClick: function () {
                 !close.$context.status && close.$context.showClose();
+                _this.config.d3Circle.onClick.call(this);
             }
         }));
 
@@ -57,12 +63,16 @@ export default class CombineComponent extends D3Shape {
         
         let context = [];
         this.config.d3Rect.forEach(rect => {
-            let uuid = this.generateUUID();
+            let uuid = Util.uuid();
             let gRect = new D3G(this.gContext, {}).draw();
             let rectContext = new D3Rect(gRect, Object.assign({}, rect, {
+                $container: this.container,
+                $parentUUID: this.config.uuid,
+                uuid: uuid,
                 name: uuid
             }));
 
+            this.container.treeMap[this.config.uuid][uuid] = {};
             this.container.map[uuid] = rectContext;
 
             rectContext.plugins = [
@@ -89,7 +99,7 @@ export default class CombineComponent extends D3Shape {
                             height: _this.config.arrow
                         });
                         let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        let hook = {
+                        let hook = new D3Hook({
                             $parent: this.$parent,
                             connected: true,
                             connector: connectLine,
@@ -99,7 +109,7 @@ export default class CombineComponent extends D3Shape {
                             updater: (config, uEvent) => {
                                 return [uEvent.x + config.width / 2, uEvent.y];
                             }
-                        }
+                        });
                         connectLine.setIn(hook);
                     },
                     onDrag: () => {
@@ -137,7 +147,7 @@ export default class CombineComponent extends D3Shape {
                     onMouseOver: function () {
                         let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
                         if (connectLine) {
-                            let hook = {
+                            let hook = new D3Hook({
                                 $parent: this.$parent,
                                 connected: true,
                                 connector: connectLine,
@@ -147,7 +157,7 @@ export default class CombineComponent extends D3Shape {
                                 updater: (config, uEvent) => {
                                     return [uEvent.x - config.width / 2, uEvent.y];
                                 }
-                            };
+                            });
                             connectLine.setOut(hook);
                         }
                     },
@@ -173,7 +183,7 @@ export default class CombineComponent extends D3Shape {
                     onMouseOver: function () {
                         let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
                         if (connectLine) {
-                            let hook = {
+                            let hook = new D3Hook({
                                 $parent: this.$parent,
                                 connected: true,
                                 connector: connectLine,
@@ -183,7 +193,7 @@ export default class CombineComponent extends D3Shape {
                                 updater: (config, uEvent) => {
                                     return [uEvent.x, uEvent.y - config.height / 2];
                                 }
-                            };
+                            });
                             connectLine.setOut(hook);
                         }
                     },
@@ -217,7 +227,7 @@ export default class CombineComponent extends D3Shape {
                             height: _this.config.arrow
                         });
                         let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        let hook = {
+                        let hook = new D3Hook({
                             $parent: this.$parent,
                             connected: true,
                             connector: connectLine,
@@ -227,7 +237,7 @@ export default class CombineComponent extends D3Shape {
                             updater: (config, uEvent) => {
                                 return [uEvent.x, uEvent.y + config.height / 2];
                             }
-                        }
+                        });
                         connectLine.setIn(hook);
                     },
                     onDrag: () => {

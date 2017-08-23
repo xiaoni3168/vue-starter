@@ -13,15 +13,17 @@
         <transition name="d-select--transition-fade">
             <div class="d-select__dropdown"
                  v-if="dropdown">
-                <ul class="d-select__dropdown-list">
-                    <li v-for="item in items"
-                        class="d-select__dropdown-item"
-                        @click="selectItem(item)"
-                        :key="item.id"
-                        :class="{selected: selectedItem.id === item.id}">
-                        <span>{{item.label}}</span>
-                    </li>
-                </ul>
+                <div class="d-select__dropdown-wrap">
+                    <ul class="d-select__dropdown-list">
+                        <li v-for="item in items"
+                            class="d-select__dropdown-item"
+                            @click="selectItem(item)"
+                            :key="item.id"
+                            :class="{selected: selectedItem[by] === item[by]}">
+                            <span>{{item.label}}</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </transition>
     </div>
@@ -30,6 +32,7 @@
 import { directive as onClickaway } from 'vue-clickaway';
 export default {
     props: {
+        by: String,
         items: Array,
         placeholder: String,
         selected: {
@@ -73,7 +76,7 @@ export default {
 .d-select {
     position: relative;
     &__input {
-        width: 90%;
+        width: 100%;
         margin: auto;
         input {
             width: 100%;
@@ -88,15 +91,19 @@ export default {
         }
     }
     &__dropdown {
-        width: 94%;
-        margin: 0 3%;
+        width: 100%;
         min-height: 50px;
         max-height: 150px;
-        background-color: #333;
+        background-color: #f5f5f5;
         position: absolute;
         border-radius: 6px;
         padding: 10px 0;
+        box-sizing: border-box;
         top: -5px;
+        z-index: 1;
+        &-wrap {
+            margin: 0 10px;
+        }
         &-list {
             list-style: none;
             margin: 0;
@@ -106,13 +113,13 @@ export default {
         }
         &-item {
             height: 26px;
+            list-style: none;
             line-height: 26px;
-            padding-left: 10px;
             font-size: 12px;
             color: #999999;
             cursor: pointer;
             &:hover {
-                color: #eeeeee;
+                color: #666666;
             }
             &.selected {
                 color: #289bf0;

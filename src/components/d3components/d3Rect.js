@@ -86,7 +86,7 @@ export default class D3Rect extends D3Shape {
     }
 
     drawText (position) {
-        if (this.config.model && this.config.model.selected.name) {
+        if (this.config.model && this.config.model.data && this.config.model.data.name) {
             this.container
                 .select(`#uuid_${this.config.name}`)
                 .attr('x', position[0] + this.config.width / 2)
@@ -95,7 +95,7 @@ export default class D3Rect extends D3Shape {
                 .attr('stroke', '#333333')
                 .attr('text-anchor', 'middle')
                 .attr('alignment-baseline', 'middle')
-                .text(this.config.model.selected.name);
+                .text(this.config.model.data.name);
         }
     }
 

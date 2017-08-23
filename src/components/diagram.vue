@@ -31,6 +31,7 @@
  */
 import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
+import * as Util from '../utils';
 
 /**逻辑组件 和表 */
 import CombineComponent from './d3components/CombineComponent';
@@ -91,6 +92,9 @@ export default {
                     height: 5
                 }
             },
+
+            dragElement: null,
+            dragElementTarget: null,
 
             // mock data
             settingModal: {
@@ -165,6 +169,7 @@ export default {
                                 .attr('width', this.boundary[0])
                                 .attr('height', this.boundary[1])
                                 .attr('viewBox', `0 0 ${this.boundary[0]} ${this.boundary[1]}`);
+        this.container.treeMap = {};
         this.container
             .on('mousemove', this.setNode)
             .call(
@@ -220,7 +225,7 @@ export default {
 
         saveModal: function (settings) {
             this.closeModal();
-            this.settingElement.config.model.selected = settings;
+            this.settingElement.config.model.data = settings;
             this.settingElement.repaint();
         },
 
@@ -282,6 +287,7 @@ export default {
                 if (this.prepareDrop) {
                     const _this = this;
                     this.combineComponent = new CombineComponent(this.container, {
+                        uuid: Util.uuid(),
                         arrow: this.shape.arrow.height,
                         d3Circle: {
                             cx: event.offsetX,
@@ -289,6 +295,11 @@ export default {
                             r: this.shape.circle.r,
                             fill: 'none',
                             strokeWidth: 1,
+                            model: {
+                                title: '联表操作',
+                                type: 'operation',
+                                sub: 'combine'
+                            },
                             hooks: [
                                 new D3Hook({
                                     point: [event.offsetX, event.offsetY - this.shape.circle.r],
@@ -335,6 +346,14 @@ export default {
                             onMouseUp: function () {
                                 _this.prepareMove = false;
                                 _this.movedContext = null;
+                            },
+                            onClick: function () {
+                                _this.$d3.event.stopPropagation();
+                                _this.settingElement = this;
+                                _this.openSetting = true;
+                                _this.settingStyle = {
+                                    transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
+                                };
                             }
                         },
                         d3Rect: [
@@ -383,6 +402,12 @@ export default {
                                             hook.connector.setIn(hook).repaint();
                                         }
                                     });
+                                },
+                                onMouseOver: function () {
+                                    _this.dragElementTarget = this;
+                                },
+                                onMouseLeave: function () {
+                                    _this.dragElementTarget = null;
                                 }
                             },
                             {
@@ -461,11 +486,15 @@ export default {
                                 ],
                                 onClick: function () {
                                     _this.$d3.event.stopPropagation();
+                                    console.log(this)
                                     _this.settingElement = this;
                                     _this.openSetting = true;
                                     _this.settingStyle = {
                                         transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
                                     };
+                                },
+                                onDragStart: function () {
+                                    _this.dragElement = this;
                                 },
                                 onDrag: function () {
                                     this.repaint(_this.$d3.event);
@@ -476,6 +505,33 @@ export default {
                                             hook.connector.setIn(hook).repaint();
                                         }
                                     });
+                                },
+                                onDragEnd: function () {
+                                    if (_this.dragElementTarget) {
+                                        // this.hooks[0].connector = _this.dragElementTarget.hooks[0].connector;
+                                        this.hooks.push(new D3Hook({
+                                            $parent: this,
+                                            connected: true,
+                                            connector: _this.dragElementTarget.hooks[0].connector,
+                                            point: ((poi) => {
+                                                let point;
+                                                this.plugins.forEach(plugin => {
+                                                    if (plugin.config.name == poi) {
+                                                        point = plugin.position;
+                                                    }
+                                                });
+                                                return point;
+                                            })(_this.dragElementTarget.hooks[0].position),
+                                            position: _this.dragElementTarget.hooks[0].position,
+                                            type: 'out',
+                                            updater: (config, uEvent) => {
+                                                return [uEvent.x, uEvent.y + config.height / 2];
+                                            }
+                                        }));
+                                        this.hooks[this.hooks.length - 1].connector.setIn(this.hooks[this.hooks.length - 1]).repaint();
+                                        _this.dragElementTarget.container.remove();
+                                        _this.dragElementTarget = null;
+                                    }
                                 }
                             }
                         ],
@@ -578,8 +634,8 @@ export default {
     .setting-modal {
         position: absolute;
         color: #f0f0f0;
-        height: 260px;
-        width: 200px;
+        height: 300px;
+        width: 260px;
         background-color: #666666;
         border-radius: 5px;
         box-shadow: 1px 1px 2px 1px rgba(51, 51, 51, 0.2);

@@ -27,13 +27,10 @@ module.exports = {
                         sass: ExtractTextPlugin.extract({
                             use: [
                                 {
-                                    loader: 'css-loader'
+                                    loader: 'css-loader!postcss-loader'
                                 },
                                 {
                                     loader: 'sass-loader'
-                                },
-                                {
-                                    loader: 'postcss-loader'
                                 }
                             ],
                             fallback: 'vue-style-loader'

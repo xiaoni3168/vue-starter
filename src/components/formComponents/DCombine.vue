@@ -1,21 +1,24 @@
 <template>
     <div class="d-combine">
         <div v-if="check()">
-            <div class="table-name">
+            <!-- <div class="table-name">
                 <div class="table-name_name">{{sourceTableB.selected.name}}</div>
                 <div class="table-name_name">{{sourceTableA.selected.name}}</div>
-            </div>
+            </div> -->
             <div class="table-conditions">
                 <div>条件</div>
                 <div class="table-conditions_fields">
-                    <d-select :items="getSelectDatas(sourceTableA.selected.fields)" :placeholder="`选择表字段`"></d-select>
-                    <div>=</div>
-                    <d-select :items="getSelectDatas(sourceTableB.selected.fields)" :placeholder="`选择表字段`"></d-select>
+                    {{`${sourceTableA.name}.${selectedFieldA.description} = ${sourceTableB.name}.${selectedFieldB.description}`}}
                 </div>
             </div>
             <div>
                 <div>选择目标表字段</div>
-                <d-checkbox :label="`字段A`"></d-checkbox>
+                <div v-for="field in sourceTableA.fields" :key="field.name">
+                    <d-checkbox :label="sourceTableA.name + '.' + field.description" :checked="field.checked"></d-checkbox>
+                </div>
+                <div v-for="field in sourceTableB.fields" :key="field.name">
+                    <d-checkbox :label="sourceTableB.name + '.' + field.description" :checked="field.checked"></d-checkbox>
+                </div>
             </div>
         </div>
     </div>
@@ -38,10 +41,16 @@ export default {
     },
     computed: {
         sourceTableA: function () {
-            return this.processDatas ? this.processDatas[0][0] : {};
+            return this.processDatas ? this.processDatas[0].data.tables[0].data : {};
+        },
+        selectedFieldA: function () {
+            return this.processDatas ? this.processDatas[0].data.sourceA : {};
         },
         sourceTableB: function () {
-            return this.processDatas ? this.processDatas[0][1] : {};
+            return this.processDatas ? this.processDatas[0].data.tables[1].data : {};
+        },
+        selectedFieldB: function () {
+            return this.processDatas ? this.processDatas[0].data.sourceB : {};
         }
     },
     mounted () {
@@ -62,19 +71,8 @@ export default {
             return datas;
         },
         check: function () {
-            let result = true;
-            if (this.processDatas) {
-                this.processDatas.forEach(data => {
-                    data.forEach(_data => {
-                        if (!_data.selected) {
-                            result = false;
-                        }
-                    });
-                });
-            } else {
-                result = false;
-            }
-            return result;
+            let result = this.processDatas && this.processDatas[0].data;
+            return !!result;
         }
     },
     components: {
@@ -96,7 +94,6 @@ export default {
         }
     }
     .table-conditions {
-        display: flex;
         &_fields {
             display: flex;
         }
