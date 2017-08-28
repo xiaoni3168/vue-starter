@@ -41,14 +41,14 @@ export default class D3Rect extends D3Shape {
                     })
             )
             .on('mouseover', () => {
-                if (this.type !== 'plugin') {
-                    this.showPlugin();
-                }
+                // if (this.type !== 'plugin') {
+                //     this.showPlugin();
+                // }
                 window.d3.event.stopPropagation();
                 this.config.onMouseOver ? this.config.onMouseOver.call(this) : void 0;
             })
             .on('mouseleave', () => {
-                this.hidePlugin();
+                // this.hidePlugin
                 this.config.onMouseLeave ? this.config.onMouseLeave.call(this) : void 0;
             })
             .on('click', () => {
@@ -86,16 +86,26 @@ export default class D3Rect extends D3Shape {
     }
 
     drawText (position) {
-        if (this.config.model && this.config.model.data && this.config.model.data.name) {
-            this.container
-                .select(`#uuid_${this.config.name}`)
-                .attr('x', position[0] + this.config.width / 2)
-                .attr('y', position[1] + this.config.height / 2)
-                .attr('font-size', 12)
-                .attr('stroke', '#333333')
-                .attr('text-anchor', 'middle')
-                .attr('alignment-baseline', 'middle')
-                .text(this.config.model.data.name);
+        if (this.config.$container) {
+            let treeMap = this.config.$container.treeMap;
+            let stepObject = treeMap[this.config.$parentUUID];
+            let data = stepObject[this.config.uuid];
+            let table = this.config.$container.$store.state.tables.tables.find(t => {
+                if (t.id == data.tableId) {
+                    return t;
+                }
+            });
+            if (table) {
+                this.container
+                    .select(`#uuid_${this.config.name}`)
+                    .attr('x', position[0] + this.config.width / 2)
+                    .attr('y', position[1] + this.config.height / 2)
+                    .attr('font-size', 12)
+                    .attr('stroke', '#333333')
+                    .attr('text-anchor', 'middle')
+                    .attr('alignment-baseline', 'middle')
+                    .text(table.name);
+            }
         }
     }
 

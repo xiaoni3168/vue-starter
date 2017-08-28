@@ -13,7 +13,7 @@ import * as Util from '../../utils';
 
 import { EventBus } from '../../event.bus';
 
-export default class CombineComponent extends D3Shape {
+export default class JoinComponent extends D3Shape {
     constructor (container, config) {
         super(container, config);
         this.container = container;
@@ -30,6 +30,20 @@ export default class CombineComponent extends D3Shape {
         this.gContext = this.g.draw();
 
         this.container.connectLine = [null];
+
+        this.componentConfig = {
+            circle: {
+                r: 20
+            },
+            rect: {
+                height: 80,
+                width: 80,
+                radius: 10
+            },
+            arrow: {
+                height: 5
+            }
+        }
     }
 
     draw () {
@@ -51,13 +65,91 @@ export default class CombineComponent extends D3Shape {
                 }
                 this.config.onClick ? this.config.onClick.call(this) : void 0;
             });
-            
-        let circle = new D3Circle(gCircle, Object.assign({}, this.config.d3Circle, {
+        
+        let circleUUID = Util.uuid();
+        let circle = new D3Circle(gCircle, {
+            $container: this.container,
+            $parentUUID: this.config.uuid,
+            uuid: this.config.d3Circle.uuid,
+            cx: this.config.d3Circle.cx,
+            cy: this.config.d3Circle.cy,
+            r: this.componentConfig.circle.r,
+            fill: 'none',
+            strokeWidth: 1,
+            model: {
+                title: '联表操作',
+                type: 'operation',
+                sub: 'combine'
+            },
+            hooks: [
+                new D3Hook({
+                    point: [this.config.d3Circle.cx, this.config.d3Circle.cy - this.componentConfig.circle.r],
+                    updater: (config, uEvent) => {
+                        return [uEvent.x, uEvent.y - this.componentConfig.circle.r];
+                    },
+                    connected: true,
+                    type: 'in',
+                    position: 'top'
+                }),
+                new D3Hook({
+                    point: [this.config.d3Circle.cx, this.config.d3Circle.cy + this.componentConfig.circle.r],
+                    updater: (config, uEvent) => {
+                        return [uEvent.x, uEvent.y + this.componentConfig.circle.r];
+                    },
+                    connected: true,
+                    type: 'in',
+                    position: 'bottom'
+                }),
+                new D3Hook({
+                    point: [this.config.d3Circle.cx + this.componentConfig.circle.r, this.config.d3Circle.cy],
+                    updater: (config, uEvent) => {
+                        return [uEvent.x + this.componentConfig.circle.r, uEvent.y];
+                    },
+                    connected: true,
+                    type: 'out',
+                    position: 'right'
+                })
+            ],
+            onDrag: function () {
+                this.repaint(window.d3.event);
+                this.hooks.forEach(hook => {
+                    if (hook.type == 'in') {
+                        hook.connector.setOut(hook).repaint();
+                    } else {
+                        hook.connector.setIn(hook).repaint();
+                    }
+                });
+            },
+            onMouseDown: function () {
+                EventBus.$emit('prepareMove', true);
+                EventBus.$emit('movedContext', this);
+                // _this.prepareMove = true;
+                // _this.movedContext = this;
+            },
+            onMouseUp: function () {
+                EventBus.$emit('prepareMove', false);
+                EventBus.$emit('movedContext', null);
+                // _this.prepareMove = false;
+                // _this.movedContext = null;
+            },
             onClick: function () {
-                !close.$context.status && close.$context.showClose();
-                _this.config.d3Circle.onClick.call(this);
+                window.d3.event.stopPropagation();
+                EventBus.$emit('settingElement', this);
+                EventBus.$emit('openSetting', true);
+                EventBus.$emit('settingStype', {
+                    transform: `translate(${window.d3.event.clientX + 20}px, ${window.d3.event.clientY - 17}px)`
+                });
+                // _this.settingElement = this;
+                // _this.openSetting = true;
+                // _this.settingStyle = {
+                //     transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
+                // };
             }
-        }));
+        });
+        this.container.treeMap[this.config.uuid][this.config.d3Circle.uuid] = {
+            type: 'operation',
+            sub: 'combine'
+        };
 
         circle.plugins = close;
         
@@ -65,14 +157,19 @@ export default class CombineComponent extends D3Shape {
         this.config.d3Rect.forEach(rect => {
             let uuid = Util.uuid();
             let gRect = new D3G(this.gContext, {}).draw();
-            let rectContext = new D3Rect(gRect, Object.assign({}, rect, {
+            let rectContext = new D3Rect(gRect, {
                 $container: this.container,
                 $parentUUID: this.config.uuid,
-                uuid: uuid,
-                name: uuid
-            }));
+                uuid: rect.uuid,
+                name: rect.uuid,
+                x: rect.x,
+                y: rect.y,
+            });
 
-            this.container.treeMap[this.config.uuid][uuid] = {};
+            this.container.treeMap[this.config.uuid][uuid] = {
+                type: rect.model.type,
+                sub: rect.model.sub
+            };
             this.container.map[uuid] = rectContext;
 
             rectContext.plugins = [

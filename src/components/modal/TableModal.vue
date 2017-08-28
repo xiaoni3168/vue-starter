@@ -4,22 +4,22 @@
             <div class="title">{{model.title}}</div>
         </div>
         <div class="body">
-            <d-select v-if="model.type == 'source'" :by="'id'" :items="getSelectDatas(model.tables)" :selected="selected" :placeholder="`选择源表数据`" @change="selectedChange"></d-select>
+            <d-select v-if="model.type == 'source'" :by="'id'" :items="getSourceSelectTables()" :selected="selected" :placeholder="`选择源表数据`" @change="selectedChange"></d-select>
             <d-combine v-if="model.type == 'target' && model.sub == 'combine'" :context="element"></d-combine>
             <div v-if="model.type == 'operation' && model.sub == 'combine'" class="combine-operation">
-                <div v-show="checkProcessDatas()">
+                <div v-if="checkProcessDatas()">
                     <div>选择联表字段</div>
                     <div class="combine-operation_fields">
                         <div class="combine-operation_fields--label">{{sourceTableALabel}}</div>
-                        <d-select :by="'name'" :items="sourceTableAFields" :selected="operationSelectedA" :placeholder="`选择字段`" @change="fieldAChange"></d-select>
+                        <d-select :by="'columnId'" :items="sourceTableAFields" :selected="operationSelectedA" :placeholder="`选择字段`" @change="fieldAChange"></d-select>
                     </div>
                     <div>=</div>
                     <div class="combine-operation_fields">
                         <div class="combine-operation_fields--label">{{sourceTableBLabel}}</div>
-                        <d-select :by="'name'" :items="sourceTableBFields" :selected="operationSelectedB" :placeholder="`选择字段`" @change="fieldBChange"></d-select>
+                        <d-select :by="'columnId'" :items="sourceTableBFields" :selected="operationSelectedB" :placeholder="`选择字段`" @change="fieldBChange"></d-select>
                     </div>
                 </div>
-                <div v-show="!checkProcessDatas()" class="no-source">
+                <div v-if="!checkProcessDatas()" class="no-source">
                     暂未选择源表数据
                 </div>
             </div>
@@ -40,8 +40,13 @@
     </div>
 </template>
 <script>
+import Vue from 'vue';
+import { mapGetters, mapActions } from 'vuex';
+
 import DSelect from '../formComponents/DSelect.vue';
 import DCombine from '../formComponents/DCombine.vue';
+
+import * as Util from '../../utils';
 
 export default {
     props: {
@@ -52,37 +57,80 @@ export default {
     },
     data () {
         let { config } = this.element;
+
+        let treeMap = this.element.config.$container.treeMap;
+        let stepObject = treeMap[this.element.config.$parentUUID];
         return {
-            selected: config.model.data ? config.model.data : {},
+            selected: stepObject[this.element.config.uuid].tableId,
             model: config.model ? config.model : {},
             processDatas: null,
 
-            operationSelectedA: config.model.data ? config.model.data.sourceA : {},
-            operationSelectedB: config.model.data ? config.model.data.sourceB : {}
+            operationSelectedA: stepObject[this.element.config.uuid].leftColumnId,
+            operationSelectedB: stepObject[this.element.config.uuid].rightColumnId
         }
     },
     computed: {
+        ...mapGetters('tables', ['tables', 'targetTables']),
         sourceTableA: function () {
-            return this.processDatas ? this.processDatas[0] : {};
+            let tableA;
+            let treeMap = this.element.config.$container.treeMap;
+            let stepObject = treeMap[this.element.config.$parentUUID];
+            for (let [key, value] of Object.entries(stepObject)) {
+                console.log(value)
+                if (value.type == 'source' && value.sub == 'leftTable') {
+                    tableA = this.tables.find(table => {
+                        if (table.id == value.tableId) {
+                            return table;
+                        }
+                    });
+                }
+                if (value.nType == 'source' && value.nSub == 'leftTable' && value.stream == 'in') {
+                    tableA = this.targetTables.find(table => {
+                        if (table.id == value.tableId) {
+                            return table;
+                        }
+                    });
+                }
+            }
+            return tableA;
         },
         sourceTableALabel: function () {
-            return this.sourceTableA.data ? this.sourceTableA.data.name + '.' : '';
+            return this.sourceTableA.name + '.';
         },
         sourceTableAFields: function () {
-            let fields = this.sourceTableA.data ? this.sourceTableA.data.fields : [];
+            let fields = this.sourceTableA.fields;
             fields.forEach(field => {
                 field.label = field.description;
             });
             return fields;
         },
         sourceTableB: function () {
-            return this.processDatas ? this.processDatas[1] : {};
+            let tableB;
+            let treeMap = this.element.config.$container.treeMap;
+            let stepObject = treeMap[this.element.config.$parentUUID];
+            for (let [key, value] of Object.entries(stepObject)) {
+                if (value.type == 'source' && value.sub == 'rightTable') {
+                    tableB = this.tables.find(table => {
+                        if (table.id == value.tableId) {
+                            return table;
+                        }
+                    });
+                }
+                if (value.nType == 'source' && value.nSub == 'rightTable' && value.stream == 'in') {
+                    tableB = this.targetTables.find(table => {
+                        if (table.id == value.tableId) {
+                            return table;
+                        }
+                    });
+                }
+            }
+            return tableB;
         },
         sourceTableBLabel: function () {
-            return this.sourceTableB.data ? this.sourceTableB.data.name + '.' : '';
+            return this.sourceTableB.name + '.';
         },
         sourceTableBFields: function () {
-            let fields = this.sourceTableB.data ? this.sourceTableB.data.fields : [];
+            let fields = this.sourceTableB.fields;
             fields.forEach(field => {
                 field.label = field.description;
             });
@@ -98,13 +146,9 @@ export default {
             return datas;
         });
     },
-    watch: {
-        element: function (n) {
-            
-        }
-    },
     methods: {
-        getSelectDatas: function (array) {
+        getSourceSelectTables: function () {
+            let array = Vue.util.extend(this.tables);
             array.forEach(a => {
                 a.label = a.name;
             });
@@ -125,27 +169,89 @@ export default {
         saveModal: function () {
             let payment = null;
             if (this.model.type == 'source') {
-                payment = this.selected;
+                this.updateTreeMap({
+                    tableId: this.selected
+                });
             }
             if (this.model.type == 'operation' && this.model.sub == 'combine') {
-                payment = {
-                    tables: [
-                        this.sourceTableA,
-                        this.sourceTableB
-                    ],
-                    sourceA: this.operationSelectedA,
-                    sourceB: this.operationSelectedB
-                }
+                this.updateTreeMap({
+                    leftTableId: this.sourceTableA.id,
+                    rightTableId: this.sourceTableB.id,
+                    leftColumnId: this.operationSelectedA,
+                    rightColumnId: this.operationSelectedB
+                });
             }
             if (this.model.type == 'target' && this.model.sub == 'combine') {
-                payment = {
+                let treeMap = this.element.config.$container.treeMap;
+                let stepObject = treeMap[this.element.config.$parentUUID];
+
+                let data = {
+                    id: stepObject[this.element.config.uuid].id ? stepObject[this.element.config.uuid].id : Util.uuid(),
+                    name: '临时表单',
+                    fields: []
                 }
+                
+                for (let [key, value] of Object.entries(stepObject)) {
+                    if (value.type == 'operation' && value.sub == 'combine') {
+                        this.getTable(value.leftTableId).fields.forEach(f => {
+                            if (f.checked) {
+                                data.fields.push({
+                                    columnId: Util.uuid(),
+                                    description: `${this.getTable(value.leftTableId).name}.${f.description}`,
+                                    sourceColumnId: f.columnId
+                                });
+                            }
+                        })
+                        this.getTable(value.rightTableId).fields.forEach(f => {
+                            if (f.checked) {
+                                data.fields.push({
+                                    columnId: Util.uuid(),
+                                    description: `${this.getTable(value.rightTableId).name}.${f.description}`,
+                                    sourceColumnId: f.columnId
+                                });
+                            }
+                        });
+                    }
+                }
+
+                for (let [key, value] of Object.entries(treeMap)) {
+                    if (value.hasOwnProperty(this.element.config.uuid)) {
+                        value[this.element.config.uuid].tableId = data.id;
+                    }
+                }
+
+                data.tableId = data.id;
+
+                this.$store.dispatch('tables/addTargetTable', data);
+                this.updateTreeMap(data);
             }
-            this.$emit('save', payment);
+            this.$emit('save');
         },
         checkProcessDatas: function () {
-            let result = this.processDatas && this.sourceTableA.data && this.sourceTableB.data;
-            return !!result;
+            let treeMap = this.element.config.$container.treeMap;
+            let stepObject = treeMap[this.element.config.$parentUUID];
+            let result = true;
+            for (let [key, value] of Object.entries(stepObject)) {
+                if ((value.type == 'source' || (value.nType == 'source' && value.stream == 'in')) && (value.sub == 'leftTable' || value.nSub == 'leftTable') && !value.tableId) {
+                    result = false;
+                }
+                if ((value.type == 'source' || (value.nType == 'source' && value.stream == 'in')) && (value.sub == 'rightTable' || value.nSub == 'rightTable') && !value.tableId) {
+                    result = false;
+                }
+            }
+            return result;
+        },
+        updateTreeMap: function (obj) {
+            let treeMap = this.element.config.$container.treeMap;
+            let stepObject = treeMap[this.element.config.$parentUUID];
+            stepObject[this.element.config.uuid] = Object.assign(stepObject[this.element.config.uuid], obj);
+        },
+        getTable: function (id) {
+            return [].concat(this.tables).concat(this.targetTables).find(t => {
+                if (t.id == id) {
+                    return t;
+                }
+            });
         }
     },
     components: {

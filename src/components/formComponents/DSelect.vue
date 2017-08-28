@@ -7,7 +7,7 @@
                    autocomplete="off"
                    :placeholder="placeholder"
                    :class="{actived: dropdown}"
-                   :value="selectedItem.label"
+                   :value="model.label"
                    @click="toggleDropdown">
         </div>
         <transition name="d-select--transition-fade">
@@ -18,8 +18,8 @@
                         <li v-for="item in items"
                             class="d-select__dropdown-item"
                             @click="selectItem(item)"
-                            :key="item.id"
-                            :class="{selected: selectedItem[by] === item[by]}">
+                            :key="item[by]"
+                            :class="{selected: selectedItem === item[by]}">
                             <span>{{item.label}}</span>
                         </li>
                     </ul>
@@ -35,12 +35,7 @@ export default {
         by: String,
         items: Array,
         placeholder: String,
-        selected: {
-            type: Object,
-            default: function () {
-                return {};
-            }
-        }
+        selected: String
     },
     data () {
         return {
@@ -49,6 +44,16 @@ export default {
         }
     },
     mounted () {
+    },
+    computed: {
+        model: function () {
+            let table = this.items.find(item => {
+                if (item[this.by] == this.selectedItem) {
+                    return item;
+                }
+            });
+            return table || {};
+        }
     },
     directives: {
         onClickaway: onClickaway
@@ -66,7 +71,7 @@ export default {
         selectItem: function (item) {
             this.closeDropdown();
 
-            this.selectedItem = item;
+            this.selectedItem = item[this.by];
             this.$emit('change', this.selectedItem);
         }
     }

@@ -19,20 +19,20 @@
 export default {
     props: {
         label: String,
-        checked: {
-            type: Boolean,
-            default: false
-        }
+        checked: Object
     },
     data () {
         return {
-            itemChecked: this.checked
+            itemChecked: this.checked.checked
         }
     },
     methods: {
         onChange: function () {
             this.itemChecked = !this.itemChecked;
-            this.$emit('change', this.itemChecked);
+            this.$emit('change', {
+                field: this.checked,
+                checked: this.itemChecked
+            });
         }
     }
 }

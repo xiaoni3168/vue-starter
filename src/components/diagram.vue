@@ -34,11 +34,14 @@ import { mapGetters, mapActions } from 'vuex';
 import * as Util from '../utils';
 
 /**逻辑组件 和表 */
-import CombineComponent from './d3components/CombineComponent';
+import JoinComponent from './d3components/JoinComponent';
 import D3Hook from './d3components/d3Hook';
 
 /**点击节点弹出选择modal */
 import TableModal from './modal/TableModal.vue';
+
+/**事件总线 */
+import { EventBus } from '../event.bus';
 
 export default {
     data () {
@@ -105,21 +108,25 @@ export default {
                         name: '用户信息表',
                         fields: [
                             {
+                                columnId: '1',
                                 name: 'id',
                                 description: '用户ID',
                                 type: 'String'
                             },
                             {
+                                columnId: '2',
                                 name: 'name',
                                 description: '用户名',
                                 type: 'String'
                             },
                             {
+                                columnId: '3',
                                 name: 'phone',
                                 description: '电话',
                                 type: 'String'
                             },
                             {
+                                columnId: '4',
                                 name: 'age',
                                 description: '年龄',
                                 type: 'Number'
@@ -131,26 +138,31 @@ export default {
                         name: '购物登记表',
                         fields: [
                             {
+                                columnId: '1',
                                 name: 'id',
                                 description: '主键ID',
                                 type: 'String'
                             },
                             {
+                                columnId: '2',
                                 name: 'uid',
                                 description: '用户ID',
                                 type: 'String'
                             },
                             {
+                                columnId: '3',
                                 name: 'product',
                                 description: '商品名称',
                                 type: 'String'
                             },
                             {
+                                columnId: '4',
                                 name: 'price',
                                 description: '商品单价',
                                 type: 'Number'
                             },
                             {
+                                columnId: '5',
                                 name: 'counts',
                                 description: '购买数量',
                                 type: 'Number'
@@ -170,6 +182,7 @@ export default {
                                 .attr('height', this.boundary[1])
                                 .attr('viewBox', `0 0 ${this.boundary[0]} ${this.boundary[1]}`);
         this.container.treeMap = {};
+        this.container.$store = this.$store;
         this.container
             .on('mousemove', this.setNode)
             .call(
@@ -186,9 +199,20 @@ export default {
                         this.container.attr('class', '');
                     })
             );
+        
+        this.$store.dispatch('tables/setTables', this.settingModal.tables);
+
+        /************************画布监听事件***************************/
+        EventBus.$on('prepareMove', payload => this.prepareMove = payload);
+        EventBus.$on('movedContext', payload => this.movedContext = payload);
+        EventBus.$on('settingElement', payload => this.settingElement = payload);
+        EventBus.$on('openSetting', payload => this.openSetting = payload);
+        EventBus.$on('settingStype', payload => this.settingStyle = payload);
+        /*************************************************************/
     },
     computed: {
         ...mapGetters('diagram', ['containerX', 'containerY']),
+        ...mapGetters('tables', ['tables']),
         settingConfig: function () {
             return Object.assign({}, this.settingElement.config.model);
         }
@@ -286,75 +310,76 @@ export default {
             if (this.nodeClone) {
                 if (this.prepareDrop) {
                     const _this = this;
-                    this.combineComponent = new CombineComponent(this.container, {
+                    this.joinComponent = new JoinComponent(this.container, {
                         uuid: Util.uuid(),
                         arrow: this.shape.arrow.height,
                         d3Circle: {
+                            uuid: Util.uuid(),
                             cx: event.offsetX,
                             cy: event.offsetY,
-                            r: this.shape.circle.r,
-                            fill: 'none',
-                            strokeWidth: 1,
-                            model: {
-                                title: '联表操作',
-                                type: 'operation',
-                                sub: 'combine'
-                            },
-                            hooks: [
-                                new D3Hook({
-                                    point: [event.offsetX, event.offsetY - this.shape.circle.r],
-                                    updater: (config, uEvent) => {
-                                        return [uEvent.x, uEvent.y - this.shape.circle.r];
-                                    },
-                                    connected: true,
-                                    type: 'in',
-                                    position: 'top'
-                                }),
-                                new D3Hook({
-                                    point: [event.offsetX, event.offsetY + this.shape.circle.r],
-                                    updater: (config, uEvent) => {
-                                        return [uEvent.x, uEvent.y + this.shape.circle.r];
-                                    },
-                                    connected: true,
-                                    type: 'in',
-                                    position: 'bottom'
-                                }),
-                                new D3Hook({
-                                    point: [event.offsetX + this.shape.circle.r, event.offsetY],
-                                    updater: (config, uEvent) => {
-                                        return [uEvent.x + this.shape.circle.r, uEvent.y];
-                                    },
-                                    connected: true,
-                                    type: 'out',
-                                    position: 'right'
-                                })
-                            ],
-                            onDrag: function () {
-                                this.repaint(_this.$d3.event);
-                                this.hooks.forEach(hook => {
-                                    if (hook.type == 'in') {
-                                        hook.connector.setOut(hook).repaint();
-                                    } else {
-                                        hook.connector.setIn(hook).repaint();
-                                    }
-                                });
-                            },
-                            onMouseDown: function () {
-                                _this.prepareMove = true;
-                                _this.movedContext = this;
-                            },
-                            onMouseUp: function () {
-                                _this.prepareMove = false;
-                                _this.movedContext = null;
-                            },
-                            onClick: function () {
-                                _this.$d3.event.stopPropagation();
-                                _this.settingElement = this;
-                                _this.openSetting = true;
-                                _this.settingStyle = {
-                                    transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
-                                };
-                            }
+                            // r: this.shape.circle.r,
+                            // fill: 'none',
+                            // strokeWidth: 1,
+                            // model: {
+                            //     title: '联表操作',
+                            //     type: 'operation',
+                            //     sub: 'combine'
+                            // },
+                            // hooks: [
+                            //     new D3Hook({
+                            //         point: [event.offsetX, event.offsetY - this.shape.circle.r],
+                            //         updater: (config, uEvent) => {
+                            //             return [uEvent.x, uEvent.y - this.shape.circle.r];
+                            //         },
+                            //         connected: true,
+                            //         type: 'in',
+                            //         position: 'top'
+                            //     }),
+                            //     new D3Hook({
+                            //         point: [event.offsetX, event.offsetY + this.shape.circle.r],
+                            //         updater: (config, uEvent) => {
+                            //             return [uEvent.x, uEvent.y + this.shape.circle.r];
+                            //         },
+                            //         connected: true,
+                            //         type: 'in',
+                            //         position: 'bottom'
+                            //     }),
+                            //     new D3Hook({
+                            //         point: [event.offsetX + this.shape.circle.r, event.offsetY],
+                            //         updater: (config, uEvent) => {
+                            //             return [uEvent.x + this.shape.circle.r, uEvent.y];
+                            //         },
+                            //         connected: true,
+                            //         type: 'out',
+                            //         position: 'right'
+                            //     })
+                            // ],
+                            // onDrag: function () {
+                            //     this.repaint(_this.$d3.event);
+                            //     this.hooks.forEach(hook => {
+                            //         if (hook.type == 'in') {
+                            //             hook.connector.setOut(hook).repaint();
+                            //         } else {
+                            //             hook.connector.setIn(hook).repaint();
+                            //         }
+                            //     });
+                            // },
+                            // onMouseDown: function () {
+                            //     _this.prepareMove = true;
+                            //     _this.movedContext = this;
+                            // },
+                            // onMouseUp: function () {
+                            //     _this.prepareMove = false;
+                            //     _this.movedContext = null;
+                            // },
+                            // onClick: function () {
+                            //     _this.$d3.event.stopPropagation();
+                            //     _this.settingElement = this;
+                            //     _this.openSetting = true;
+                            //     _this.settingStyle = {
+                            //         transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
+                            //     };
+                            // }
                         },
                         d3Rect: [
                             {
@@ -371,8 +396,8 @@ export default {
                                 boundary: this.boundary,
                                 model: {
                                     title: '源表选择',
-                                    tables: this.settingModal.tables,
                                     type: 'source',
+                                    sub: 'leftTable',
                                     selected: {}
                                 },
                                 hooks: [
@@ -424,8 +449,8 @@ export default {
                                 boundary: this.boundary,
                                 model: {
                                     title: '源表选择',
-                                    tables: this.settingModal.tables,
                                     type: 'source',
+                                    sub: 'rightTable',
                                     selected: {}
                                 },
                                 hooks: [
@@ -455,6 +480,12 @@ export default {
                                             hook.connector.setIn(hook).repaint();
                                         }
                                     });
+                                },
+                                onMouseOver: function () {
+                                    _this.dragElementTarget = this;
+                                },
+                                onMouseLeave: function () {
+                                    _this.dragElementTarget = null;
                                 }
                             },
                             {
@@ -508,7 +539,6 @@ export default {
                                 },
                                 onDragEnd: function () {
                                     if (_this.dragElementTarget) {
-                                        // this.hooks[0].connector = _this.dragElementTarget.hooks[0].connector;
                                         this.hooks.push(new D3Hook({
                                             $parent: this,
                                             connected: true,
@@ -524,10 +554,16 @@ export default {
                                             })(_this.dragElementTarget.hooks[0].position),
                                             position: _this.dragElementTarget.hooks[0].position,
                                             type: 'out',
-                                            updater: (config, uEvent) => {
-                                                return [uEvent.x, uEvent.y + config.height / 2];
-                                            }
+                                            updater: Vue.util.extend(_this.dragElementTarget.hooks[0].updater)
                                         }));
+                                        
+                                        _this.container.treeMap[this.config.$parentUUID][this.config.uuid].nType = _this.dragElementTarget.config.model.type;
+                                        _this.container.treeMap[this.config.$parentUUID][this.config.uuid].nSub = _this.dragElementTarget.config.model.sub;
+
+                                        _this.container.treeMap[_this.dragElementTarget.config.$parentUUID][this.config.uuid] = Object.assign({}, _this.container.treeMap[this.config.$parentUUID][this.config.uuid]);
+                                        _this.container.treeMap[_this.dragElementTarget.config.$parentUUID][this.config.uuid].stream = 'in';
+                                        delete _this.container.treeMap[_this.dragElementTarget.config.$parentUUID][_this.dragElementTarget.config.uuid];
+
                                         this.hooks[this.hooks.length - 1].connector.setIn(this.hooks[this.hooks.length - 1]).repaint();
                                         _this.dragElementTarget.container.remove();
                                         _this.dragElementTarget = null;
