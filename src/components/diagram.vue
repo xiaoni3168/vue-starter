@@ -49,7 +49,7 @@ export default {
             /**逻辑组件列表（左侧拖拽的组件） */
             nodes: [
                 {
-                    name: 'combineTable',
+                    name: 'joinTable',
                     icon: 'add',
                     id: 1
                 }
@@ -65,7 +65,7 @@ export default {
             prepareMove: false,
 
             /**拖拽放置的逻辑组件 */
-            combineComponent: null,
+            joinComponent: null,
             /**画布中正在移动的节点 */
             // TODO: 同上
             movedContext: null,
@@ -97,7 +97,8 @@ export default {
             },
 
             dragElement: null,
-            dragElementTarget: null,
+
+            initDiagram: null,
 
             // mock data
             settingModal: {
@@ -183,6 +184,7 @@ export default {
                                 .attr('viewBox', `0 0 ${this.boundary[0]} ${this.boundary[1]}`);
         this.container.treeMap = {};
         this.container.$store = this.$store;
+        this.container.boundary = this.boundary;
         this.container
             .on('mousemove', this.setNode)
             .call(
@@ -207,8 +209,148 @@ export default {
         EventBus.$on('movedContext', payload => this.movedContext = payload);
         EventBus.$on('settingElement', payload => this.settingElement = payload);
         EventBus.$on('openSetting', payload => this.openSetting = payload);
-        EventBus.$on('settingStype', payload => this.settingStyle = payload);
+        EventBus.$on('settingStyle', payload => this.settingStyle = payload);
+        EventBus.$on('dragElement', payload => this.dragElement = payload);
+        EventBus.$on('dragElementTarget', payload => this.container.dragElementTarget = payload);
         /*************************************************************/
+
+        // this.initDiagram = [
+        //     {
+        //         uuid: '2715c496-1556-4344-be9a-7e28f85e1afc',
+        //         type: 'join',
+        //         d3Circle: {
+        //             uuid: 'dd137d73-cfc4-44f5-dfc3-f9f5111f94d9',
+        //             cx: 120,
+        //             cy: 200
+        //         },
+        //         d3Rect: [
+        //             {
+        //                 uuid: '54db5d89-bf8c-4318-9e6e-daeeea383483',
+        //                 x: 50,
+        //                 y: 50,
+        //                 model: {
+        //                     title: '源表选择',
+        //                     type: 'source',
+        //                     sub: 'leftTable',
+        //                     selected: {}
+        //                 },
+        //                 hooks: [
+        //                     {
+        //                         type: 'out',
+        //                         position: 'bottom'
+        //                     }
+        //                 ],
+        //             },
+        //             {
+        //                 uuid: '751ed11f-2a2f-4af6-c817-74a7f25055e1',
+        //                 x: 50,
+        //                 y: 275,
+        //                 model: {
+        //                     title: '源表选择',
+        //                     type: 'source',
+        //                     sub: 'rightTable',
+        //                     selected: {}
+        //                 },
+        //                 hooks: [
+        //                     {
+        //                         type: 'out',
+        //                         position: 'top'
+        //                     }
+        //                 ]
+        //             },
+        //             {
+        //                 uuid: 'dcc785a9-d7dc-4200-aa80-6f0c75f698e0',
+        //                 x: 160,
+        //                 y: 50,
+        //                 model: {
+        //                     title: '联表配置',
+        //                     type: 'target',
+        //                     sub: 'combine'
+        //                 },
+        //                 hooks: [
+        //                     {
+        //                         type: 'in',
+        //                         position: 'left'
+        //                     },
+        //                     {
+        //                         type: 'out',
+        //                         position: 'bottom',
+        //                         connector: {
+        //                             'dc4fd082-2d1b-4d40-e999-36ccdce77b43': 0
+        //                         }
+        //                     }
+        //                 ]
+        //             }
+        //         ]
+        //     },
+        //     {
+        //         uuid: 'e32709de-dcf9-4e6e-ca01-29a3544366e6',
+        //         type: 'join',
+        //         d3Circle: {
+        //             uuid: 'dc4fd082-2d1b-4d40-e999-36ccdce77b43',
+        //             cx: 220,
+        //             cy: 200
+        //         },
+        //         d3Rect: [
+        //             {
+        //                 uuid: 'dcc785a9-d7dc-4200-aa80-6f0c75f698e0',
+        //                 x: 100,
+        //                 y: 200,
+        //                 model: {
+        //                     title: '联表配置',
+        //                     type: 'target',
+        //                     sub: 'combine',
+        //                     nType: 'source',
+        //                     nSub: 'leftTable',
+        //                     stream: 'in'
+        //                 },
+        //                 hooks: [
+        //                     {
+        //                         type: 'in',
+        //                         position: 'left'
+        //                     },
+        //                     {
+        //                         type: 'out',
+        //                         position: 'bottom'
+        //                     }
+        //                 ]
+        //             },
+        //             {
+        //                 uuid: 'da63a765-260a-421b-a200-6222baaefe4d',
+        //                 x: 160,
+        //                 y: 275,
+        //                 model: {
+        //                     title: '源表选择',
+        //                     type: 'source',
+        //                     sub: 'rightTable',
+        //                     selected: {}
+        //                 },
+        //                 hooks: [
+        //                     {
+        //                         type: 'out',
+        //                         position: 'top'
+        //                     }
+        //                 ]
+        //             },
+        //             {
+        //                 uuid: '2b6c0480-e08c-48ac-f4cc-254c8d2de9b4',
+        //                 x: 400,
+        //                 y: 200,
+        //                 model: {
+        //                     title: '联表配置',
+        //                     type: 'target',
+        //                     sub: 'combine'
+        //                 },
+        //                 hooks: [
+        //                     {
+        //                         type: 'in',
+        //                         position: 'left'
+        //                     }
+        //                 ]
+        //             }
+        //         ]
+        //     }
+        // ];
     },
     computed: {
         ...mapGetters('diagram', ['containerX', 'containerY']),
@@ -312,141 +454,33 @@ export default {
                     const _this = this;
                     this.joinComponent = new JoinComponent(this.container, {
                         uuid: Util.uuid(),
-                        arrow: this.shape.arrow.height,
                         d3Circle: {
                             uuid: Util.uuid(),
                             cx: event.offsetX,
-                            cy: event.offsetY,
-                            // r: this.shape.circle.r,
-                            // fill: 'none',
-                            // strokeWidth: 1,
-                            // model: {
-                            //     title: '联表操作',
-                            //     type: 'operation',
-                            //     sub: 'combine'
-                            // },
-                            // hooks: [
-                            //     new D3Hook({
-                            //         point: [event.offsetX, event.offsetY - this.shape.circle.r],
-                            //         updater: (config, uEvent) => {
-                            //             return [uEvent.x, uEvent.y - this.shape.circle.r];
-                            //         },
-                            //         connected: true,
-                            //         type: 'in',
-                            //         position: 'top'
-                            //     }),
-                            //     new D3Hook({
-                            //         point: [event.offsetX, event.offsetY + this.shape.circle.r],
-                            //         updater: (config, uEvent) => {
-                            //             return [uEvent.x, uEvent.y + this.shape.circle.r];
-                            //         },
-                            //         connected: true,
-                            //         type: 'in',
-                            //         position: 'bottom'
-                            //     }),
-                            //     new D3Hook({
-                            //         point: [event.offsetX + this.shape.circle.r, event.offsetY],
-                            //         updater: (config, uEvent) => {
-                            //             return [uEvent.x + this.shape.circle.r, uEvent.y];
-                            //         },
-                            //         connected: true,
-                            //         type: 'out',
-                            //         position: 'right'
-                            //     })
-                            // ],
-                            // onDrag: function () {
-                            //     this.repaint(_this.$d3.event);
-                            //     this.hooks.forEach(hook => {
-                            //         if (hook.type == 'in') {
-                            //             hook.connector.setOut(hook).repaint();
-                            //         } else {
-                            //             hook.connector.setIn(hook).repaint();
-                            //         }
-                            //     });
-                            // },
-                            // onMouseDown: function () {
-                            //     _this.prepareMove = true;
-                            //     _this.movedContext = this;
-                            // },
-                            // onMouseUp: function () {
-                            //     _this.prepareMove = false;
-                            //     _this.movedContext = null;
-                            // },
-                            // onClick: function () {
-                            //     _this.$d3.event.stopPropagation();
-                            //     _this.settingElement = this;
-                            //     _this.openSetting = true;
-                            //     _this.settingStyle = {
-                            //         transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
-                            //     };
-                            // }
+                            cy: event.offsetY
                         },
                         d3Rect: [
                             {
+                                uuid: Util.uuid(),
                                 x: event.offsetX - this.shape.rect.width,
                                 y: event.offsetY - this.shape.rect.height * 1.5,
-                                rx: 10,
-                                ry: 10,
-                                width: this.shape.rect.width,
-                                height: this.shape.rect.height,
-                                strokeWidth: 1,
-                                fill: '#f5f5f5',
-                                stroke: '#cccccc',
-                                strokeDassarray: '5,3',
-                                boundary: this.boundary,
+                                hooks: [
+                                    {
+                                        type: 'out',
+                                        position: 'bottom'
+                                    }
+                                ],
                                 model: {
                                     title: '源表选择',
                                     type: 'source',
                                     sub: 'leftTable',
                                     selected: {}
-                                },
-                                hooks: [
-                                    new D3Hook({
-                                        updater: (config, uEvent) => {
-                                            return [uEvent.x, uEvent.y + config.height / 2];
-                                        },
-                                        connected: true,
-                                        type: 'out',
-                                        position: 'bottom'
-                                    })
-                                ],
-                                onClick: function () {
-                                    _this.$d3.event.stopPropagation();
-                                    _this.settingElement = this;
-                                    _this.openSetting = true;
-                                    _this.settingStyle = {
-                                        transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
-                                    };
-                                },
-                                onDrag: function () {
-                                    this.repaint(_this.$d3.event);
-                                    this.hooks.forEach(hook => {
-                                        if (hook.type == 'in') {
-                                            hook.connector.setOut(hook).repaint();
-                                        } else {
-                                            hook.connector.setIn(hook).repaint();
-                                        }
-                                    });
-                                },
-                                onMouseOver: function () {
-                                    _this.dragElementTarget = this;
-                                },
-                                onMouseLeave: function () {
-                                    _this.dragElementTarget = null;
                                 }
                             },
                             {
+                                uuid: Util.uuid(),
                                 x: event.offsetX - this.shape.rect.width,
                                 y: event.offsetY + this.shape.rect.height * 0.5,
-                                rx: 10,
-                                ry: 10,
-                                width: this.shape.rect.width,
-                                height: this.shape.rect.height,
-                                strokeWidth: 1,
-                                fill: '#f5f5f5',
-                                stroke: '#cccccc',
-                                strokeDassarray: '5,3',
-                                boundary: this.boundary,
                                 model: {
                                     title: '源表选择',
                                     type: 'source',
@@ -454,132 +488,44 @@ export default {
                                     selected: {}
                                 },
                                 hooks: [
-                                    new D3Hook({
-                                        updater: (config, uEvent) => {
-                                            return [uEvent.x, uEvent.y - config.height / 2];
-                                        },
-                                        connected: true,
+                                    {
                                         type: 'out',
                                         position: 'top'
-                                    })
-                                ],
-                                onClick: function () {
-                                    _this.$d3.event.stopPropagation();
-                                    _this.settingElement = this;
-                                    _this.openSetting = true;
-                                    _this.settingStyle = {
-                                        transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
-                                    };
-                                },
-                                onDrag: function () {
-                                    this.repaint(_this.$d3.event);
-                                    this.hooks.forEach(hook => {
-                                        if (hook.type == 'in') {
-                                            hook.connector.setOut(hook).repaint();
-                                        } else {
-                                            hook.connector.setIn(hook).repaint();
-                                        }
-                                    });
-                                },
-                                onMouseOver: function () {
-                                    _this.dragElementTarget = this;
-                                },
-                                onMouseLeave: function () {
-                                    _this.dragElementTarget = null;
-                                }
+                                    }
+                                ]
                             },
                             {
+                                uuid: Util.uuid(),
                                 x: event.offsetX + this.shape.rect.height * 0.5,
                                 y: event.offsetY - this.shape.rect.height * 0.5,
-                                rx: 10,
-                                ry: 10,
-                                width: this.shape.rect.width,
-                                height: this.shape.rect.height,
-                                strokeWidth: 1,
-                                fill: '#f5f5f5',
-                                stroke: '#cccccc',
-                                strokeDassarray: '5,3',
-                                boundary: this.boundary,
                                 model: {
                                     title: '联表配置',
                                     type: 'target',
-                                    sub: 'combine'
+                                    sub: 'join'
                                 },
                                 hooks: [
-                                    new D3Hook({
-                                        updater: (config, uEvent) => {
-                                            return [uEvent.x - config.width / 2, uEvent.y];
-                                        },
-                                        connected: true,
+                                    {
                                         type: 'in',
                                         position: 'left'
-                                    })
-                                ],
-                                onClick: function () {
-                                    _this.$d3.event.stopPropagation();
-                                    console.log(this)
-                                    _this.settingElement = this;
-                                    _this.openSetting = true;
-                                    _this.settingStyle = {
-                                        transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
-                                    };
-                                },
-                                onDragStart: function () {
-                                    _this.dragElement = this;
-                                },
-                                onDrag: function () {
-                                    this.repaint(_this.$d3.event);
-                                    this.hooks.forEach(hook => {
-                                        if (hook.type == 'in') {
-                                            hook.connector.setOut(hook).repaint();
-                                        } else {
-                                            hook.connector.setIn(hook).repaint();
-                                        }
-                                    });
-                                },
-                                onDragEnd: function () {
-                                    if (_this.dragElementTarget) {
-                                        this.hooks.push(new D3Hook({
-                                            $parent: this,
-                                            connected: true,
-                                            connector: _this.dragElementTarget.hooks[0].connector,
-                                            point: ((poi) => {
-                                                let point;
-                                                this.plugins.forEach(plugin => {
-                                                    if (plugin.config.name == poi) {
-                                                        point = plugin.position;
-                                                    }
-                                                });
-                                                return point;
-                                            })(_this.dragElementTarget.hooks[0].position),
-                                            position: _this.dragElementTarget.hooks[0].position,
-                                            type: 'out',
-                                            updater: Vue.util.extend(_this.dragElementTarget.hooks[0].updater)
-                                        }));
-                                        
-                                        _this.container.treeMap[this.config.$parentUUID][this.config.uuid].nType = _this.dragElementTarget.config.model.type;
-                                        _this.container.treeMap[this.config.$parentUUID][this.config.uuid].nSub = _this.dragElementTarget.config.model.sub;
-
-                                        _this.container.treeMap[_this.dragElementTarget.config.$parentUUID][this.config.uuid] = Object.assign({}, _this.container.treeMap[this.config.$parentUUID][this.config.uuid]);
-                                        _this.container.treeMap[_this.dragElementTarget.config.$parentUUID][this.config.uuid].stream = 'in';
-                                        delete _this.container.treeMap[_this.dragElementTarget.config.$parentUUID][_this.dragElementTarget.config.uuid];
-
-                                        this.hooks[this.hooks.length - 1].connector.setIn(this.hooks[this.hooks.length - 1]).repaint();
-                                        _this.dragElementTarget.container.remove();
-                                        _this.dragElementTarget = null;
                                     }
-                                }
+                                ]
                             }
-                        ],
-                        onClick: () => {
-                            this.openSetting = false;
-                        }
+                        ]
                     }).draw();
                     this.prepareDrop = false;
                 }
                 this.nodeClone.remove();
                 this.nodeClone = null;
             }
+        }
+    },
+    watch: {
+        initDiagram: function (n) {
+            n.forEach(step => {
+                if (step.type == 'join') {
+                    new JoinComponent(this.container, step).draw();
+                }
+            });
         }
     },
     components: {

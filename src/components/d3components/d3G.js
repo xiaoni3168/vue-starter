@@ -10,6 +10,7 @@ export default class D3G extends D3Shape {
     draw () {
         return this.context
             .attr('fill', 'transparent')
+            .attr('uuid', this.config.uuid)
             .on('mouseover', () => {
                 this.config.onMouseOver ? this.config.onMouseOver.call(this) : void 0;
             })

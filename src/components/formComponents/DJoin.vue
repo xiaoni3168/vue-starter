@@ -1,5 +1,5 @@
 <template>
-    <div class="d-combine">
+    <div class="d-join">
         <div v-if="check()">
             <div class="table-conditions">
                 <div>条件</div>
@@ -151,7 +151,7 @@ export default {
             let treeMap = this.context.config.$container.treeMap;
             let stepObject = treeMap[this.context.config.$parentUUID];
             for (let [key, value] of Object.entries(stepObject)) {
-                if (value.type == 'operation' && value.sub == 'combine') {
+                if (value.type == 'operation' && value.sub == 'join') {
                     return value;
                 }
             }
@@ -190,7 +190,7 @@ export default {
 }
 </script>
 <style lang="scss">
-.d-combine {
+.d-join {
     padding: 2px 4px;
     font-size: 12px;
     .table-name {

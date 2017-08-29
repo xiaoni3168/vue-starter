@@ -16,6 +16,7 @@ export default class D3Circle extends D3Shape {
             .attr('fill', this.config.fill || 'none')
             .attr('stroke', this.config.stroke || '#333333')
             .attr('stroke-width', this.config.strokeWidth || 1)
+            .attr('uuid', this.config.uuid)
             .on('click', () => {
                 this.config.onClick ? this.config.onClick.call(this) : void 0;
             })

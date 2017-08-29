@@ -26,7 +26,9 @@ export default class JoinComponent extends D3Shape {
 
         this.activatedContextUUID;
 
-        this.g = new D3G(this.container, this.config.d3G || {})
+        this.g = new D3G(this.container, {
+            uuid: this.config.uuid
+        });
         this.gContext = this.g.draw();
 
         this.container.connectLine = [null];
@@ -63,10 +65,9 @@ export default class JoinComponent extends D3Shape {
                 if (this.activatedContextUUID) {
                     EventBus.$emit('clearPlugin');
                 }
-                this.config.onClick ? this.config.onClick.call(this) : void 0;
+                EventBus.$emit('openSetting', false);
             });
         
-        let circleUUID = Util.uuid();
         let circle = new D3Circle(gCircle, {
             $container: this.container,
             $parentUUID: this.config.uuid,
@@ -79,7 +80,7 @@ export default class JoinComponent extends D3Shape {
             model: {
                 title: '联表操作',
                 type: 'operation',
-                sub: 'combine'
+                sub: 'join'
             },
             hooks: [
                 new D3Hook({
@@ -123,39 +124,30 @@ export default class JoinComponent extends D3Shape {
             onMouseDown: function () {
                 EventBus.$emit('prepareMove', true);
                 EventBus.$emit('movedContext', this);
-                // _this.prepareMove = true;
-                // _this.movedContext = this;
             },
             onMouseUp: function () {
                 EventBus.$emit('prepareMove', false);
                 EventBus.$emit('movedContext', null);
-                // _this.prepareMove = false;
-                // _this.movedContext = null;
             },
             onClick: function () {
                 window.d3.event.stopPropagation();
                 EventBus.$emit('settingElement', this);
                 EventBus.$emit('openSetting', true);
-                EventBus.$emit('settingStype', {
+                EventBus.$emit('settingStyle', {
                     transform: `translate(${window.d3.event.clientX + 20}px, ${window.d3.event.clientY - 17}px)`
                 });
-                // _this.settingElement = this;
-                // _this.openSetting = true;
-                // _this.settingStyle = {
-                //     transform: `translate(${_this.$d3.event.clientX + 20}px, ${_this.$d3.event.clientY - 17}px)`
-                // };
             }
         });
         this.container.treeMap[this.config.uuid][this.config.d3Circle.uuid] = {
             type: 'operation',
-            sub: 'combine'
+            sub: 'join'
         };
+        this.container.map[this.config.d3Circle.uuid] = circle;
 
         circle.plugins = close;
         
         let context = [];
         this.config.d3Rect.forEach(rect => {
-            let uuid = Util.uuid();
             let gRect = new D3G(this.gContext, {}).draw();
             let rectContext = new D3Rect(gRect, {
                 $container: this.container,
@@ -164,196 +156,184 @@ export default class JoinComponent extends D3Shape {
                 name: rect.uuid,
                 x: rect.x,
                 y: rect.y,
+                rx: this.componentConfig.rect.radius,
+                ry: this.componentConfig.rect.radius,
+                width: this.componentConfig.rect.width,
+                height: this.componentConfig.rect.height,
+                strokeWidth: 1,
+                fill: '#f5f5f5',
+                stroke: '#cccccc',
+                strokeDassarray: '5,3',
+                boundary: this.container.boundary,
+                model: rect.model,
+                hooks: [
+                    ...(a => {
+                        rect.hooks.forEach(hook => {
+                            a.push(new D3Hook({
+                                connected: true,
+                                type: hook.type,
+                                position: hook.position,
+                                connector: hook.connector,
+                                updater: (config, uEvent) => {
+                                    switch(hook.position) {
+                                        case 'bottom':
+                                            return [uEvent.x, uEvent.y + config.height / 2];
+                                        case 'top':
+                                            return [uEvent.x, uEvent.y - config.height / 2];
+                                        case 'left':
+                                            return [uEvent.x - config.width / 2, uEvent.y];
+                                    }
+                                }
+                            }));
+                        });
+                        return a;
+                    })([])
+                ],
+                onClick: function () {
+                    window.d3.event.stopPropagation();
+                    EventBus.$emit('settingElement', this);
+                    EventBus.$emit('openSetting', true);
+                    EventBus.$emit('settingStyle', {
+                        transform: `translate(${window.d3.event.clientX + 20}px, ${window.d3.event.clientY - 17}px)`
+                    });
+                },
+                onDrag: function () {
+                    this.repaint(window.d3.event);
+                    this.hooks.forEach(hook => {
+                        if (hook.type == 'in') {
+                            hook.connector.setOut(hook).repaint();
+                        } else {
+                            hook.connector.setIn(hook).repaint();
+                        }
+                    });
+                },
+                onMouseOver: function () {
+                    if (rect.model.type == 'source') {
+                        EventBus.$emit('dragElementTarget', this);
+                    }
+                },
+                onMouseLeave: function () {
+                    if (rect.model.type == 'source') {
+                        EventBus.$emit('dragElementTarget', null);
+                    }
+                },
+                ...(() => {
+                    return rect.model.type == 'target' ?  {
+                        onDragStart: function () {
+                            window.d3.select(`g[uuid="${this.config.$parentUUID}"]`).raise();
+                            this.context.attr('style', 'pointer-events: none;');
+                            EventBus.$emit('dragElement', this);
+                        },
+                        onDrag: function () {
+                            this.repaint(window.d3.event);
+                            this.hooks.forEach(hook => {
+                                if (hook.type == 'in') {
+                                    hook.connector.setOut(hook).repaint();
+                                } else {
+                                    hook.connector.setIn(hook).repaint();
+                                }
+                            });
+                        },
+                        onDragEnd: function () {
+                            this.context.attr('style', '');
+                            if (_this.container.dragElementTarget) {
+                                this.hooks.push(new D3Hook({
+                                    $parent: this,
+                                    connected: true,
+                                    connector: _this.container.dragElementTarget.hooks[0].connector,
+                                    point: ((poi) => {
+                                        let point;
+                                        this.plugins.forEach(plugin => {
+                                            if (plugin.config.name == poi) {
+                                                point = plugin.position;
+                                            }
+                                        });
+                                        return point;
+                                    })(_this.container.dragElementTarget.hooks[0].position),
+                                    position: _this.container.dragElementTarget.hooks[0].position,
+                                    type: 'out',
+                                    updater: Vue.util.extend(_this.container.dragElementTarget.hooks[0].updater)
+                                }));
+                                
+                                _this.container.treeMap[this.config.$parentUUID][this.config.uuid].nType = _this.container.dragElementTarget.config.model.type;
+                                _this.container.treeMap[this.config.$parentUUID][this.config.uuid].nSub = _this.container.dragElementTarget.config.model.sub;
+
+                                _this.container.treeMap[_this.container.dragElementTarget.config.$parentUUID][this.config.uuid] = Object.assign({}, _this.container.treeMap[this.config.$parentUUID][this.config.uuid]);
+                                _this.container.treeMap[_this.container.dragElementTarget.config.$parentUUID][this.config.uuid].stream = 'in';
+                                delete _this.container.treeMap[_this.container.dragElementTarget.config.$parentUUID][_this.container.dragElementTarget.config.uuid];
+
+                                this.hooks[this.hooks.length - 1].connector.setIn(this.hooks[this.hooks.length - 1]).repaint();
+                                _this.container.dragElementTarget.container.remove();
+                                _this.container.dragElementTarget = null;
+                            }
+                        }
+                    } : {};
+                })()
             });
 
-            this.container.treeMap[this.config.uuid][uuid] = {
+            this.container.treeMap[this.config.uuid][rect.uuid] = {
                 type: rect.model.type,
-                sub: rect.model.sub
+                sub: rect.model.sub,
+                nType: rect.model.nType,
+                nSub: rect.model.nSub,
+                stream: rect.model.stream
             };
-            this.container.map[uuid] = rectContext;
+            if (rect.model.stream != 'in') {
+                this.container.map[rect.uuid] = rectContext;
+            }
 
             rectContext.plugins = [
                 new D3Rect(gRect, {
                     name: 'right',
                     type: 'plugin',
-                    x: rect.x + rect.width - 5,
-                    y: rect.y + rect.height / 2 - 5,
-                    boundary: rect.boundary,
+                    x: rect.x + this.componentConfig.rect.width - 5,
+                    y: rect.y + this.componentConfig.rect.height / 2 - 5,
+                    boundary: this.container.boundary,
                     width: 10,
                     height: 10,
                     fill: '#999999',
                     updater: (uEvent, config) => {
-                        return [uEvent.x + rect.width / 2 - 5, uEvent.y - 5];
-                    },
-                    onDragStart: function () {
-                        _this.container.connectLine[_this.container.connectLine.length - 1] = new D3Line(_this.gContext, {
-                            x1: this.position[0] + 5,
-                            y1: this.position[1] + 5,
-                            x2: this.position[0] + 5,
-                            y2: this.position[1] + 5,
-                            stroke: '#333333',
-                            strokeWidth: 1,
-                            height: _this.config.arrow
-                        });
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        let hook = new D3Hook({
-                            $parent: this.$parent,
-                            connected: true,
-                            connector: connectLine,
-                            point: this.position,
-                            position: 'right',
-                            type: 'out',
-                            updater: (config, uEvent) => {
-                                return [uEvent.x + config.width / 2, uEvent.y];
-                            }
-                        });
-                        connectLine.setIn(hook);
-                    },
-                    onDrag: () => {
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        connectLine.updateConfig({
-                            x2: window.d3.event.x,
-                            y2: window.d3.event.y
-                        });
-                        connectLine.draw();
-                    },
-                    onDragEnd: function () {
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        if (!connectLine.out || connectLine.notActive) {
-                            connectLine.destroy();
-                        } else {
-                            connectLine.in.$parent.hooks.push(connectLine.in);
-                            connectLine.out.$parent.hooks.push(connectLine.out);
-                            _this.container.connectLine.push(null);
-                        }
+                        return [uEvent.x + this.componentConfig.rect.width / 2 - 5, uEvent.y - 5];
                     }
                 }),
                 new D3Rect(gRect, {
                     name: 'left',
                     type: 'plugin',
                     x: rect.x - 5,
-                    y: rect.y + rect.height / 2 - 5,
-                    boundary: rect.boundary,
+                    y: rect.y + this.componentConfig.rect.width / 2 - 5,
+                    boundary: this.container.boundary,
                     width: 10,
                     height: 10,
                     fill: '#999999',
                     style: 'z-index: 100',
                     updater: (uEvent, config) => {
-                        return [uEvent.x - rect.width / 2 - 5, uEvent.y - 5];
-                    },
-                    onMouseOver: function () {
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        if (connectLine) {
-                            let hook = new D3Hook({
-                                $parent: this.$parent,
-                                connected: true,
-                                connector: connectLine,
-                                point: this.position,
-                                position: this.config.name,
-                                type: 'in',
-                                updater: (config, uEvent) => {
-                                    return [uEvent.x - config.width / 2, uEvent.y];
-                                }
-                            });
-                            connectLine.setOut(hook);
-                        }
-                    },
-                    onMouseLeave: function () {
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        if (connectLine) {
-                            _this.container.connectLine[_this.container.connectLine.length - 1].notActive = true;
-                        }
+                        return [uEvent.x - this.componentConfig.rect.width / 2 - 5, uEvent.y - 5];
                     }
                 }),
                 new D3Rect(gRect, {
                     name: 'top',
                     type: 'plugin',
-                    x: rect.x + rect.width / 2 - 5,
-                    boundary: rect.boundary,
+                    x: rect.x + this.componentConfig.rect.width / 2 - 5,
+                    boundary: this.container.boundary,
                     y: rect.y - 5,
                     width: 10,
                     height: 10,
                     fill: '#999999',
                     updater: (uEvent, config) => {
-                        return [uEvent.x - 5, uEvent.y - rect.height / 2 - 5];
-                    },
-                    onMouseOver: function () {
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        if (connectLine) {
-                            let hook = new D3Hook({
-                                $parent: this.$parent,
-                                connected: true,
-                                connector: connectLine,
-                                point: this.position,
-                                position: this.config.name,
-                                type: 'in',
-                                updater: (config, uEvent) => {
-                                    return [uEvent.x, uEvent.y - config.height / 2];
-                                }
-                            });
-                            connectLine.setOut(hook);
-                        }
-                    },
-                    onMouseLeave: function () {
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        if (connectLine) {
-                            _this.container.connectLine[_this.container.connectLine.length - 1].notActive = true;
-                        }
+                        return [uEvent.x - 5, uEvent.y - this.componentConfig.rect.height / 2 - 5];
                     }
                 }),
                 new D3Rect(gRect, {
                     name: 'bottom',
                     type: 'plugin',
-                    x: rect.x + rect.width / 2 - 5,
-                    y: rect.y + rect.height - 5,
-                    boundary: rect.boundary,
+                    x: rect.x + this.componentConfig.rect.width / 2 - 5,
+                    y: rect.y + this.componentConfig.rect.height - 5,
+                    boundary: this.container.boundary,
                     width: 10,
                     height: 10,
                     fill: '#999999',
                     updater: (uEvent, config) => {
-                        return [uEvent.x - 5, uEvent.y + rect.height / 2 - 5];
-                    },
-                    onDragStart: function () {
-                        _this.container.connectLine[_this.container.connectLine.length - 1] = new D3Line(_this.gContext, {
-                            x1: this.position[0] + 5,
-                            y1: this.position[1] + 5,
-                            x2: this.position[0] + 5,
-                            y2: this.position[1] + 5,
-                            stroke: '#333333',
-                            strokeWidth: 1,
-                            height: _this.config.arrow
-                        });
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        let hook = new D3Hook({
-                            $parent: this.$parent,
-                            connected: true,
-                            connector: connectLine,
-                            point: this.position,
-                            position: 'bottom',
-                            type: 'out',
-                            updater: (config, uEvent) => {
-                                return [uEvent.x, uEvent.y + config.height / 2];
-                            }
-                        });
-                        connectLine.setIn(hook);
-                    },
-                    onDrag: () => {
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        connectLine.updateConfig({
-                            x2: window.d3.event.x,
-                            y2: window.d3.event.y
-                        });
-                        connectLine.draw();
-                    },
-                    onDragEnd: function () {
-                        let connectLine = _this.container.connectLine[_this.container.connectLine.length - 1];
-                        if (!connectLine.out || connectLine.notActive) {
-                            connectLine.destroy();
-                        } else {
-                            connectLine.in.$parent.hooks.push(connectLine.in);
-                            connectLine.out.$parent.hooks.push(connectLine.out);
-                            _this.container.connectLine.push(null);
-                        }
+                        return [uEvent.x - 5, uEvent.y + this.componentConfig.rect.height / 2 - 5];
                     }
                 })
             ];
@@ -365,11 +345,14 @@ export default class JoinComponent extends D3Shape {
         circle.draw();
 
         context.forEach(rect => {
-            rect.draw();
-            rect.plugins.forEach(plugin => {
-                plugin.$parent = rect;
-                plugin.draw().style('opacity', 0);
-            });
+            if (rect.config.model.stream != 'in') {
+                rect.draw();
+
+                rect.plugins.forEach(plugin => {
+                    plugin.$parent = rect;
+                    plugin.draw().style('opacity', 0);
+                });
+            }
         });
     }
 
@@ -377,7 +360,7 @@ export default class JoinComponent extends D3Shape {
         shapes.forEach((shape, $i) => {
             let hooks = shape.config.hooks;
 
-            hooks.forEach(hook => {
+            shape.config.model.stream != 'in' && hooks.forEach(hook => {
                 switch (hook.position) {
                     case 'top':
                         hook.point = [shape.config.x + shape.config.width / 2, shape.config.y];break;
@@ -391,23 +374,52 @@ export default class JoinComponent extends D3Shape {
                         break;
                 }
 
-                let line = new D3Line(container, {
-                    x1: hook.type === 'out' ? hook.point[0] : core.config.hooks[$i].point[0],
-                    y1: hook.type === 'out' ? hook.point[1] : core.config.hooks[$i].point[1],
-                    x2: hook.type !== 'out' ? hook.point[0] : core.config.hooks[$i].point[0],
-                    y2: hook.type !== 'out' ? hook.point[1] : core.config.hooks[$i].point[1],
-                    stroke: '#333333',
-                    strokeWidth: 1,
-                    height: this.config.arrow
-                });
-                
-                line.setIn(hook.type === 'out' ? hook : core.config.hooks[$i]);
-                line.setOut(hook.type !== 'out' ? hook : core.config.hooks[$i]);
+                let line;
 
-                core.config.hooks[$i].connector = line;
-                hook.connector = line;
+                if (hook.connector) {
+                    setTimeout(() => {
+                        console.log(this.container.map['dc4fd082-2d1b-4d40-e999-36ccdce77b43'])
+                        let [_key, _value] = Object.entries(hook.connector)[0];
+                        let _core = this.container.map[_key];
+                        line = new D3Line(container, {
+                            x1: hook.type === 'out' ? hook.point[0] : _core.config.hooks[_value].point[0],
+                            y1: hook.type === 'out' ? hook.point[1] : _core.config.hooks[_value].point[1],
+                            x2: hook.type !== 'out' ? hook.point[0] : _core.config.hooks[_value].point[0],
+                            y2: hook.type !== 'out' ? hook.point[1] : _core.config.hooks[_value].point[1],
+                            stroke: '#333333',
+                            strokeWidth: 1,
+                            height: this.componentConfig.arrow.height
+                        });
 
-                line.draw();
+                        line.setIn(hook.type === 'out' ? hook : _core.config.hooks[_value]);
+                        line.setOut(hook.type !== 'out' ? hook : _core.config.hooks[_value]);
+        
+                        _core.config.hooks[_value].connector = line;
+    
+                        hook.connector = line;
+                        
+                        line.draw();
+                    });
+                } else {
+                    line = new D3Line(container, {
+                        x1: hook.type === 'out' ? hook.point[0] : core.config.hooks[$i].point[0],
+                        y1: hook.type === 'out' ? hook.point[1] : core.config.hooks[$i].point[1],
+                        x2: hook.type !== 'out' ? hook.point[0] : core.config.hooks[$i].point[0],
+                        y2: hook.type !== 'out' ? hook.point[1] : core.config.hooks[$i].point[1],
+                        stroke: '#333333',
+                        strokeWidth: 1,
+                        height: this.componentConfig.arrow.height
+                    });
+                    
+                    line.setIn(hook.type === 'out' ? hook : core.config.hooks[$i]);
+                    line.setOut(hook.type !== 'out' ? hook : core.config.hooks[$i]);
+    
+                    core.config.hooks[$i].connector = line;
+
+                    hook.connector = line;
+                    
+                    line.draw();
+                }
             });
         });
     }

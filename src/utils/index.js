@@ -7,3 +7,5 @@ export function uuid () {
     });
     return uuid;
 }
+
+window.uuid = uuid;

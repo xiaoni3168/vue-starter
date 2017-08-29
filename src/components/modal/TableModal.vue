@@ -5,17 +5,17 @@
         </div>
         <div class="body">
             <d-select v-if="model.type == 'source'" :by="'id'" :items="getSourceSelectTables()" :selected="selected" :placeholder="`选择源表数据`" @change="selectedChange"></d-select>
-            <d-combine v-if="model.type == 'target' && model.sub == 'combine'" :context="element"></d-combine>
-            <div v-if="model.type == 'operation' && model.sub == 'combine'" class="combine-operation">
+            <d-join v-if="model.type == 'target' && model.sub == 'join'" :context="element"></d-join>
+            <div v-if="model.type == 'operation' && model.sub == 'join'" class="join-operation">
                 <div v-if="checkProcessDatas()">
                     <div>选择联表字段</div>
-                    <div class="combine-operation_fields">
-                        <div class="combine-operation_fields--label">{{sourceTableALabel}}</div>
+                    <div class="join-operation_fields">
+                        <div class="join-operation_fields--label">{{sourceTableALabel}}</div>
                         <d-select :by="'columnId'" :items="sourceTableAFields" :selected="operationSelectedA" :placeholder="`选择字段`" @change="fieldAChange"></d-select>
                     </div>
                     <div>=</div>
-                    <div class="combine-operation_fields">
-                        <div class="combine-operation_fields--label">{{sourceTableBLabel}}</div>
+                    <div class="join-operation_fields">
+                        <div class="join-operation_fields--label">{{sourceTableBLabel}}</div>
                         <d-select :by="'columnId'" :items="sourceTableBFields" :selected="operationSelectedB" :placeholder="`选择字段`" @change="fieldBChange"></d-select>
                     </div>
                 </div>
@@ -44,7 +44,7 @@ import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 
 import DSelect from '../formComponents/DSelect.vue';
-import DCombine from '../formComponents/DCombine.vue';
+import DJoin from '../formComponents/DJoin.vue';
 
 import * as Util from '../../utils';
 
@@ -173,7 +173,7 @@ export default {
                     tableId: this.selected
                 });
             }
-            if (this.model.type == 'operation' && this.model.sub == 'combine') {
+            if (this.model.type == 'operation' && this.model.sub == 'join') {
                 this.updateTreeMap({
                     leftTableId: this.sourceTableA.id,
                     rightTableId: this.sourceTableB.id,
@@ -181,7 +181,7 @@ export default {
                     rightColumnId: this.operationSelectedB
                 });
             }
-            if (this.model.type == 'target' && this.model.sub == 'combine') {
+            if (this.model.type == 'target' && this.model.sub == 'join') {
                 let treeMap = this.element.config.$container.treeMap;
                 let stepObject = treeMap[this.element.config.$parentUUID];
 
@@ -192,7 +192,7 @@ export default {
                 }
                 
                 for (let [key, value] of Object.entries(stepObject)) {
-                    if (value.type == 'operation' && value.sub == 'combine') {
+                    if (value.type == 'operation' && value.sub == 'join') {
                         this.getTable(value.leftTableId).fields.forEach(f => {
                             if (f.checked) {
                                 data.fields.push({
@@ -256,7 +256,7 @@ export default {
     },
     components: {
         'd-select': DSelect,
-        'd-combine': DCombine
+        'd-join': DJoin
     }
 }
 </script>
@@ -267,7 +267,7 @@ export default {
     .body {
         font-size: 12px;
         padding: 5px 10px;
-        .combine-operation {
+        .join-operation {
             &_fields {
                 display: flex;
                 align-items: baseline;

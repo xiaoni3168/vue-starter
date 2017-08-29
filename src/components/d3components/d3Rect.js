@@ -28,6 +28,7 @@ export default class D3Rect extends D3Shape {
             .attr('stroke-dasharray', this.config.strokeDassarray)
             .attr('tabindex', 0)
             .attr('style', this.config.style)
+            .attr('uuid', this.config.uuid)
             .call(
                 d3.drag()
                     .on('drag', () => {
