@@ -89,7 +89,7 @@ export default {
             border: none;
             height: 30px;
             border-radius: 6px;
-            background-color: #333;
+            background-color: #000000;
             box-sizing: border-box;
             color: #eeeeee;
             transition: background-color ease .2s;

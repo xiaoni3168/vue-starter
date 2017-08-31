@@ -33,6 +33,7 @@ export default class D3Line extends D3Shape {
     }
 
     computPath (pointStart, pointEnd) {
+        console.log(this)
         switch (`${this.in.position} ${this.out ? this.out.position : 'left'}`) {
             case 'right left':
                 return `M ${pointStart.join(' ')} L ${pointStart[0] + (pointEnd[0] - pointStart[0]) / 2} ${pointStart[1]} L ${pointStart[0] + (pointEnd[0] - pointStart[0]) / 2} ${pointEnd[1]} L ${pointEnd.join(' ')}`;
@@ -41,6 +42,12 @@ export default class D3Line extends D3Shape {
             case 'top bottom':
             case 'bottom top':
                 return `M ${pointStart.join(' ')} L ${pointStart[0]} ${pointStart[1] + (pointEnd[1] - pointStart[1]) / 2} L ${pointEnd[0]} ${pointStart[1] + (pointEnd[1] - pointStart[1]) / 2} L ${pointEnd.join(' ')}`;
+                // return `M ${pointStart.join(' ')} 
+                //         L ${pointStart[0]} ${(pointStart[1] + pointEnd[1]) / 2 - 5} 
+                //         A 5 5 0 0 0 ${pointStart[0] + 5} ${(pointStart[1] + pointEnd[1]) / 2} 
+                //         L ${pointEnd[0] - 5} ${(pointStart[1] + pointEnd[1]) / 2} 
+                //         A 5 5 0 0 1 ${pointEnd[0]} ${(pointStart[1] + pointEnd[1]) / 2 + 5} 
+                //         L ${pointEnd.join(' ')}`;
             case 'bottom left':
                 return `M ${pointStart.join(' ')} L ${pointStart[0]} ${pointEnd[1]} L ${pointEnd.join(' ')}`;
 

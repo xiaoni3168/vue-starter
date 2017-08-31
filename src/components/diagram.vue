@@ -5,7 +5,7 @@
                  class="node" 
                  :key="node.id" 
                  :class="node.icon"
-                 @mousedown="selectNode"></div>
+                 @mousedown="selectNode(node, $event)"></div>
         </div>
         <div class="content">
             <div class="zoom-btn">
@@ -31,10 +31,12 @@
  */
 import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
+import axios from 'axios';
 import * as Util from '../utils';
 
 /**逻辑组件 和表 */
 import JoinComponent from './d3components/JoinComponent';
+import AggregationComponent from './d3components/AggregationComponent';
 import D3Hook from './d3components/d3Hook';
 
 /**点击节点弹出选择modal */
@@ -52,6 +54,11 @@ export default {
                     name: 'joinTable',
                     icon: 'add',
                     id: 1
+                },
+                {
+                    name: 'aggregationTable',
+                    icon: 'aggre',
+                    id: 2
                 }
             ],
             /**拖拽生成的临时复制节点 */
@@ -101,77 +108,77 @@ export default {
             initDiagram: null,
 
             // mock data
-            settingModal: {
-                title: '源表选择',
-                tables: [
-                    {
-                        id: '1',
-                        name: '用户信息表',
-                        fields: [
-                            {
-                                columnId: '1',
-                                name: 'id',
-                                description: '用户ID',
-                                type: 'String'
-                            },
-                            {
-                                columnId: '2',
-                                name: 'name',
-                                description: '用户名',
-                                type: 'String'
-                            },
-                            {
-                                columnId: '3',
-                                name: 'phone',
-                                description: '电话',
-                                type: 'String'
-                            },
-                            {
-                                columnId: '4',
-                                name: 'age',
-                                description: '年龄',
-                                type: 'Number'
-                            }
-                        ]
-                    },
-                    {
-                        id: '2',
-                        name: '购物登记表',
-                        fields: [
-                            {
-                                columnId: '1',
-                                name: 'id',
-                                description: '主键ID',
-                                type: 'String'
-                            },
-                            {
-                                columnId: '2',
-                                name: 'uid',
-                                description: '用户ID',
-                                type: 'String'
-                            },
-                            {
-                                columnId: '3',
-                                name: 'product',
-                                description: '商品名称',
-                                type: 'String'
-                            },
-                            {
-                                columnId: '4',
-                                name: 'price',
-                                description: '商品单价',
-                                type: 'Number'
-                            },
-                            {
-                                columnId: '5',
-                                name: 'counts',
-                                description: '购买数量',
-                                type: 'Number'
-                            }
-                        ]
-                    }
-                ]
-            },
+            // settingModal: {
+            //     title: '源表选择',
+            //     tables: [
+            //         {
+            //             id: '1',
+            //             name: '用户信息表',
+            //             fields: [
+            //                 {
+            //                     columnId: '1',
+            //                     name: 'id',
+            //                     description: '用户ID',
+            //                     type: 'String'
+            //                 },
+            //                 {
+            //                     columnId: '2',
+            //                     name: 'name',
+            //                     description: '用户名',
+            //                     type: 'String'
+            //                 },
+            //                 {
+            //                     columnId: '3',
+            //                     name: 'phone',
+            //                     description: '电话',
+            //                     type: 'String'
+            //                 },
+            //                 {
+            //                     columnId: '4',
+            //                     name: 'age',
+            //                     description: '年龄',
+            //                     type: 'Number'
+            //                 }
+            //             ]
+            //         },
+            //         {
+            //             id: '2',
+            //             name: '购物登记表',
+            //             fields: [
+            //                 {
+            //                     columnId: '1',
+            //                     name: 'id',
+            //                     description: '主键ID',
+            //                     type: 'String'
+            //                 },
+            //                 {
+            //                     columnId: '2',
+            //                     name: 'uid',
+            //                     description: '用户ID',
+            //                     type: 'String'
+            //                 },
+            //                 {
+            //                     columnId: '3',
+            //                     name: 'product',
+            //                     description: '商品名称',
+            //                     type: 'String'
+            //                 },
+            //                 {
+            //                     columnId: '4',
+            //                     name: 'price',
+            //                     description: '商品单价',
+            //                     type: 'Number'
+            //                 },
+            //                 {
+            //                     columnId: '5',
+            //                     name: 'counts',
+            //                     description: '购买数量',
+            //                     type: 'Number'
+            //                 }
+            //             ]
+            //         }
+            //     ]
+            // },
         }
     },
     mounted () {
@@ -183,6 +190,7 @@ export default {
                                 .attr('height', this.boundary[1])
                                 .attr('viewBox', `0 0 ${this.boundary[0]} ${this.boundary[1]}`);
         this.container.treeMap = {};
+        this.container.flow = {};
         this.container.$store = this.$store;
         this.container.boundary = this.boundary;
         this.container
@@ -202,7 +210,7 @@ export default {
                     })
             );
         
-        this.$store.dispatch('tables/setTables', this.settingModal.tables);
+        // this.$store.dispatch('tables/setTables', this.settingModal.tables);
 
         /************************画布监听事件***************************/
         EventBus.$on('prepareMove', payload => this.prepareMove = payload);
@@ -213,6 +221,23 @@ export default {
         EventBus.$on('dragElement', payload => this.dragElement = payload);
         EventBus.$on('dragElementTarget', payload => this.container.dragElementTarget = payload);
         /*************************************************************/
+
+
+        //------------------------------------------------------------/
+        axios.post('http://localhost:10001/diagram/uuid/generate', { num: 30 }).then(res => {
+            this.container.uuids = res.data;
+        }).catch(err => {
+            console.log(err);
+        });
+
+        axios.get('http://localhost:10001/diagram/tables').then(res => {
+            this.$nextTick(() => {
+                this.$store.dispatch('tables/setTables', res.data);
+            });
+        }).catch(err => {
+            console.log(err);
+        });
+        //------------------------------------------------------------/
 
         // this.initDiagram = [
         //     {
@@ -265,7 +290,7 @@ export default {
         //                 model: {
         //                     title: '联表配置',
         //                     type: 'target',
-        //                     sub: 'combine'
+        //                     sub: 'join'
         //                 },
         //                 hooks: [
         //                     {
@@ -299,7 +324,7 @@ export default {
         //                 model: {
         //                     title: '联表配置',
         //                     type: 'target',
-        //                     sub: 'combine',
+        //                     sub: 'join',
         //                     nType: 'source',
         //                     nSub: 'leftTable',
         //                     stream: 'in'
@@ -334,12 +359,69 @@ export default {
         //             },
         //             {
         //                 uuid: '2b6c0480-e08c-48ac-f4cc-254c8d2de9b4',
-        //                 x: 400,
+        //                 x: 280,
+        //                 y: 160,
+        //                 model: {
+        //                     title: '联表配置',
+        //                     type: 'target',
+        //                     sub: 'join'
+        //                 },
+        //                 hooks: [
+        //                     {
+        //                         type: 'in',
+        //                         position: 'left'
+        //                     },
+        //                     {
+        //                         type: 'out',
+        //                         position: 'right',
+        //                         connector: {
+        //                             '7c23bdd7-6c8f-40c8-f406-abe20e37b4b5': 0
+        //                         }
+        //                     }
+        //                 ]
+        //             }
+        //         ]
+        //     },
+        //     {
+        //         uuid: '2300419c-31dc-462a-e16d-fcf9b8bde34c',
+        //         type: 'aggregation',
+        //         d3Circle: {
+        //             uuid: '7c23bdd7-6c8f-40c8-f406-abe20e37b4b5',
+        //             cx: 420,
+        //             cy: 200
+        //         },
+        //         d3Rect: [
+        //             {
+        //                 uuid: '2b6c0480-e08c-48ac-f4cc-254c8d2de9b4',
+        //                 x: 100,
         //                 y: 200,
         //                 model: {
         //                     title: '联表配置',
         //                     type: 'target',
-        //                     sub: 'combine'
+        //                     sub: 'join',
+        //                     nType: 'source',
+        //                     nSub: 'leftTable',
+        //                     stream: 'in'
+        //                 },
+        //                 hooks: [
+        //                     {
+        //                         type: 'in',
+        //                         position: 'left'
+        //                     },
+        //                     {
+        //                         type: 'out',
+        //                         position: 'right'
+        //                     }
+        //                 ]
+        //             },
+        //             {
+        //                 uuid: '17518eca-6074-4a25-d1c0-e645f90aa8d7',
+        //                 x: 480,
+        //                 y: 160,
+        //                 model: {
+        //                     title: '联表配置',
+        //                     type: 'target',
+        //                     sub: 'aggregation'
         //                 },
         //                 hooks: [
         //                     {
@@ -403,12 +485,13 @@ export default {
          * 
          * @param {Event} event
          */
-        selectNode: function (event) {
-            let node = event.target;
-            this.nodeClone = node.cloneNode(true);
+        selectNode: function (node, $event) {
+            let nodeEl = event.target;
+            this.nodeClone = nodeEl.cloneNode(true);
             this.nodeClone.className += ' moved';
 
             this.nodeClone.style.transform = `translate(${event.x - 25}px, ${event.y - 25}px)`;
+            this.nodeClone.node = node;
             
             this.$nextTick(() => {
                 document.querySelector('.diagram').appendChild(this.nodeClone);
@@ -452,7 +535,8 @@ export default {
             if (this.nodeClone) {
                 if (this.prepareDrop) {
                     const _this = this;
-                    this.joinComponent = new JoinComponent(this.container, {
+                    
+                    this.nodeClone.node.id == 1 && (this.joinComponent = new JoinComponent(this.container, {
                         uuid: Util.uuid(),
                         d3Circle: {
                             uuid: Util.uuid(),
@@ -511,7 +595,52 @@ export default {
                                 ]
                             }
                         ]
-                    }).draw();
+                    }).draw());
+
+                    this.nodeClone.node.id == 2 && (this.aggregationComponent = new AggregationComponent(this.container, {
+                        uuid: Util.uuid(),
+                        d3Circle: {
+                            uuid: Util.uuid(),
+                            cx: event.offsetX,
+                            cy: event.offsetY
+                        },
+                        d3Rect: [
+                            {
+                                uuid: Util.uuid(),
+                                x: event.offsetX - this.shape.rect.width * 1.8,
+                                y: event.offsetY - this.shape.rect.height / 2,
+                                hooks: [
+                                    {
+                                        type: 'out',
+                                        position: 'right'
+                                    }
+                                ],
+                                model: {
+                                    title: '源表选择',
+                                    type: 'source',
+                                    sub: 'leftTable',
+                                    selected: {}
+                                }
+                            },
+                            {
+                                uuid: Util.uuid(),
+                                x: event.offsetX + this.shape.rect.height * 0.8,
+                                y: event.offsetY - this.shape.rect.height / 2,
+                                model: {
+                                    title: '联表配置',
+                                    type: 'target',
+                                    sub: 'aggregation'
+                                },
+                                hooks: [
+                                    {
+                                        type: 'in',
+                                        position: 'left'
+                                    }
+                                ]
+                            }
+                        ]
+                    }).draw());
+
                     this.prepareDrop = false;
                 }
                 this.nodeClone.remove();
@@ -524,6 +653,9 @@ export default {
             n.forEach(step => {
                 if (step.type == 'join') {
                     new JoinComponent(this.container, step).draw();
+                }
+                if (step.type == 'aggregation') {
+                    new AggregationComponent(this.container, step).draw();
                 }
             });
         }
@@ -558,6 +690,7 @@ export default {
         border-radius: 100%;
         border: 2px solid;
         cursor: move;
+        position: relative;
         &.moved {
             position: absolute;
             pointer-events: none;
@@ -568,6 +701,17 @@ export default {
         &.add {
             background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAbFJREFUeAHt2sFtAkEUREHslMg/BGKyM/gcumnLUnEdqQfqicNK+3j4ECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgEBT4Ks59hdbz+fz57r39Xr9q9/4ff0YZ3sBQfbm542CnDz7Q0H25ueNgpw8+0NB9ubnjYKcPPtDQfbm542CnDz7Q0H25ueNgpw8+0NB9ubnjYKcPPtDQfbm542CnDz7Q0H25ueNgpw8+0NB9ubnjYKcPPtDQfbm542CnDz7Q0H25ueNgpw8+8OPv7P07r2p/U/u3th+78s/pNsnXhMkJuwOCNL1jNcEiQm7A4J0PeM1QWLC7oAgXc947ePPIfE3fDPw7jmn/Zzw5uvEx/4hMWF3QJCuZ7wmSEzYHRCk6xmvCRITdgcE6XrGa4LEhN0BQbqe8ZogMWF3QJCuZ7wmSEzYHRCk6xmvCRITdgcE6XrGa4LEhN0BQbqe8ZogMWF3QJCuZ7wmSEzYHRCk6xmvCRITdgcE6XrGa4LEhAYIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgACBhcAvaWQMbpMu3CsAAAAASUVORK5CYII=);
             background-size: 50px;
+        }
+        &.aggre {
+            &:after {
+                content: '聚';
+                position: absolute;
+                font-size: 24px;
+                text-align: center;
+                line-height: 50px;
+                width: 100%;
+                height: 100%;
+            }
         }
     }
     .content {
@@ -617,8 +761,8 @@ export default {
         position: absolute;
         color: #f0f0f0;
         height: 300px;
-        width: 260px;
-        background-color: #666666;
+        width: 300px;
+        background-color: #333333;
         border-radius: 5px;
         box-shadow: 1px 1px 2px 1px rgba(51, 51, 51, 0.2);
         top: 0;
@@ -628,7 +772,7 @@ export default {
             position: absolute;
             height: 0;
             width: 0;
-            border-right: 10px solid #666666;
+            border-right: 10px solid #333333;
             border-bottom: 10px solid transparent;
             border-top: 10px solid transparent;
             left: -10px;

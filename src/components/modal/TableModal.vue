@@ -100,7 +100,7 @@ export default {
         sourceTableAFields: function () {
             let fields = this.sourceTableA.fields;
             fields.forEach(field => {
-                field.label = field.description;
+                field.label = field.name;
             });
             return fields;
         },
@@ -132,7 +132,7 @@ export default {
         sourceTableBFields: function () {
             let fields = this.sourceTableB.fields;
             fields.forEach(field => {
-                field.label = field.description;
+                field.label = field.name;
             });
             return fields;
         }
@@ -197,7 +197,7 @@ export default {
                             if (f.checked) {
                                 data.fields.push({
                                     columnId: Util.uuid(),
-                                    description: `${this.getTable(value.leftTableId).name}.${f.description}`,
+                                    name: `${this.getTable(value.leftTableId).name}.${f.name}`,
                                     sourceColumnId: f.columnId
                                 });
                             }
@@ -206,7 +206,7 @@ export default {
                             if (f.checked) {
                                 data.fields.push({
                                     columnId: Util.uuid(),
-                                    description: `${this.getTable(value.rightTableId).name}.${f.description}`,
+                                    name: `${this.getTable(value.rightTableId).name}.${f.name}`,
                                     sourceColumnId: f.columnId
                                 });
                             }
@@ -264,9 +264,14 @@ export default {
 .table-modal {
     position: relative;
     height: 100%;
+    display: flex;
+    flex-direction: column;
     .body {
         font-size: 12px;
         padding: 5px 10px;
+        margin-bottom: 30px;
+        overflow: scroll;
+        flex-grow: 1;
         .join-operation {
             &_fields {
                 display: flex;

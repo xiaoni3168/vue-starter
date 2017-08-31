@@ -95,6 +95,10 @@ export default class D3Rect extends D3Shape {
                 if (t.id == data.tableId) {
                     return t;
                 }
+            }) || this.config.$container.$store.state.tables.targetTables.find(t => {
+                if (t.id == data.tableId) {
+                    return t;
+                }
             });
             if (table) {
                 this.container

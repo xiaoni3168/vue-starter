@@ -2,18 +2,21 @@
     <div class="d-join">
         <div v-if="check()">
             <div class="table-conditions">
+                <d-input :placeholder="`表单名称`"></d-input>
                 <div>条件</div>
                 <div class="table-conditions_fields">
-                    {{`${sourceTableA.name}.${selectedFieldA.description} = ${sourceTableB.name}.${selectedFieldB.description}`}}
+                    {{`${sourceTableA.name}.${selectedFieldA.name} = ${sourceTableB.name}.${selectedFieldB.name}`}}
                 </div>
             </div>
             <div>
                 <div>选择目标表字段</div>
-                <div v-for="field in sourceTableA.fields" :key="field.columnId">
-                    <d-checkbox :label="sourceTableA.name + '.' + field.description" :checked="field" @change="checkTableAField"></d-checkbox>
+                <div v-for="(field, $index) in sourceTableA.fields" :key="field.columnId" class="fields-wrap">
+                    <d-checkbox :label="sourceTableA.name + '.' + field.name" :checked="field" @change="checkTableAField"></d-checkbox>
+                    <d-input :disabled="tableACheck ? !tableACheck.fields[$index].checked : true" :placeholder="sourceTableA.name + '.' + field.name"></d-input>
                 </div>
-                <div v-for="field in sourceTableB.fields" :key="field.columnId">
-                    <d-checkbox :label="sourceTableB.name + '.' + field.description" :checked="field" @change="checkTableBField"></d-checkbox>
+                <div v-for="(field, $index) in sourceTableB.fields" :key="field.columnId" class="fields-wrap">
+                    <d-checkbox :label="sourceTableB.name + '.' + field.name" :checked="field" @change="checkTableBField"></d-checkbox>
+                    <d-input :disabled="tableBCheck ? !tableBCheck.fields[$index].checked : true" :placeholder="sourceTableB.name + '.' + field.name"></d-input>
                 </div>
             </div>
         </div>
@@ -25,6 +28,7 @@ import { mapGetters } from 'vuex';
 
 import DSelect from './DSelect.vue';
 import DCheckbox from './DCheckbox.vue';
+import DInput from './DInput.vue';
 
 export default {
     props: {
@@ -35,7 +39,9 @@ export default {
     },
     data () {
         return {
-            processDatas: null
+            processDatas: null,
+            tableACheck: null,
+            tableBCheck: null
         }
     },
     computed: {
@@ -68,6 +74,8 @@ export default {
                     f.checked = false;
                 });
             }
+
+            this.tableACheck = Object.assign({}, table);
 
             return Object.assign({}, table || {});
         },
@@ -112,6 +120,8 @@ export default {
                 });
             }
 
+            this.tableBCheck = Object.assign({}, table);
+
             return Object.assign({}, table || {});
         },
         selectedFieldB: function () {
@@ -133,7 +143,7 @@ export default {
     methods: {
         getSelectDatas: function (array) {
             array.forEach(a => {
-                a.label = a.description;
+                a.label = a.name;
             });
             return array;
         },
@@ -158,6 +168,16 @@ export default {
             return null;
         },
         checkTableAField: function (value) {
+            this.tableACheck = Object.assign({}, this.sourceTableA, {
+                fields: this.sourceTableA.fields.map(field => {
+                    if (field.columnId == value.field.columnId) {
+                        return Object.assign({}, field, {
+                            checked: value.checked
+                        })
+                    }
+                    return field
+                })
+            });
             this.sourceTableA.fields.forEach(f => {
                 if (f.columnId == value.field.columnId) {
                     f.checked = value.checked;
@@ -165,6 +185,16 @@ export default {
             });
         },
         checkTableBField: function (value) {
+            this.tableBCheck = Object.assign({}, this.sourceTableB, {
+                fields: this.sourceTableB.fields.map(field => {
+                    if (field.columnId == value.field.columnId) {
+                        return Object.assign({}, field, {
+                            checked: value.checked
+                        })
+                    }
+                    return field
+                })
+            });
             this.sourceTableB.fields.forEach(f => {
                 if (f.columnId == value.field.columnId) {
                     f.checked = value.checked;
@@ -185,7 +215,8 @@ export default {
     },
     components: {
         'd-select': DSelect,
-        'd-checkbox': DCheckbox
+        'd-checkbox': DCheckbox,
+        'd-input': DInput
     }
 }
 </script>
@@ -205,6 +236,13 @@ export default {
         &_fields {
             display: flex;
         }
+    }
+    .fields-wrap {
+        display: flex;
+        align-items: baseline;
+        margin: 10px 0;
+        width: 100%;
+        justify-content: space-between;
     }
 }
 </style>

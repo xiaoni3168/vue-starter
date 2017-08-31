@@ -12,20 +12,21 @@ import * as Util from '../../utils';
 
 import { EventBus } from '../../event.bus';
 
-export default class JoinComponent extends D3Shape {
+export default class AggregationComponent extends D3Shape {
     constructor (container, config) {
         super(container, config);
+
         this.container = container;
         this.config = config;
 
         this.container.map = this.container.map ? this.container.map : {};
         this.container.treeMap[this.config.uuid] = {
-            type: 'join'
+            type: 'aggregation'
         }
         this.container.flow[this.config.uuid] = {};
 
         this.activatedContextUUID;
-
+        
         this.g = new D3G(this.container, {
             uuid: this.config.uuid
         });
@@ -50,7 +51,6 @@ export default class JoinComponent extends D3Shape {
 
     draw () {
         const _this = this;
-        
         this.container
             .on('click', () => {
                 if (this.activatedContextUUID) {
@@ -69,28 +69,19 @@ export default class JoinComponent extends D3Shape {
             fill: 'none',
             strokeWidth: 1,
             model: {
-                title: '联表操作',
+                title: '聚合操作',
                 type: 'operation',
-                sub: 'join'
+                sub: 'aggregation'
             },
             hooks: [
                 new D3Hook({
-                    point: [this.config.d3Circle.cx, this.config.d3Circle.cy - this.componentConfig.circle.r],
+                    point: [this.config.d3Circle.cx - this.componentConfig.circle.r, this.config.d3Circle.cy],
                     updater: (config, uEvent) => {
-                        return [uEvent.x, uEvent.y - this.componentConfig.circle.r];
+                        return [uEvent.x - this.componentConfig.circle.r, uEvent.y];
                     },
                     connected: true,
                     type: 'in',
-                    position: 'top'
-                }),
-                new D3Hook({
-                    point: [this.config.d3Circle.cx, this.config.d3Circle.cy + this.componentConfig.circle.r],
-                    updater: (config, uEvent) => {
-                        return [uEvent.x, uEvent.y + this.componentConfig.circle.r];
-                    },
-                    connected: true,
-                    type: 'in',
-                    position: 'bottom'
+                    position: 'left'
                 }),
                 new D3Hook({
                     point: [this.config.d3Circle.cx + this.componentConfig.circle.r, this.config.d3Circle.cy],
@@ -131,12 +122,10 @@ export default class JoinComponent extends D3Shape {
         });
         this.container.treeMap[this.config.uuid][this.config.d3Circle.uuid] = {
             type: 'operation',
-            sub: 'join'
+            sub: 'aggregation'
         };
         this.container.map[this.config.d3Circle.uuid] = circle;
 
-        // circle.plugins = close;
-        
         let context = [];
         this.config.d3Rect.forEach(rect => {
             let gRect = new D3G(this.gContext, {}).draw();
@@ -253,7 +242,6 @@ export default class JoinComponent extends D3Shape {
 
                                 _this.container.treeMap[_this.container.dragElementTarget.config.$parentUUID][this.config.uuid] = Object.assign({}, _this.container.treeMap[this.config.$parentUUID][this.config.uuid]);
                                 _this.container.treeMap[_this.container.dragElementTarget.config.$parentUUID][this.config.uuid].stream = 'in';
-                                _this.container.flow[this.config.$parentUUID].target = _this.container.dragElementTarget.config.$parentUUID;
                                 delete _this.container.treeMap[_this.container.dragElementTarget.config.$parentUUID][_this.container.dragElementTarget.config.uuid];
 
                                 this.hooks[this.hooks.length - 1].connector.setIn(this.hooks[this.hooks.length - 1]).repaint();
@@ -372,7 +360,6 @@ export default class JoinComponent extends D3Shape {
 
                 if (hook.connector) {
                     setTimeout(() => {
-                        console.log(this.container.map['dc4fd082-2d1b-4d40-e999-36ccdce77b43'])
                         let [_key, _value] = Object.entries(hook.connector)[0];
                         let _core = this.container.map[_key];
                         line = new D3Line(container, {
@@ -421,14 +408,4 @@ export default class JoinComponent extends D3Shape {
     destroy () {
         this.gContext.remove();
     }
-
-    generateUUID () {
-        var d = new Date().getTime();
-        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = (d + Math.random()*16)%16 | 0;
-            d = Math.floor(d/16);
-            return (c=='x' ? r : (r&0x7|0x8)).toString(16);
-        });
-        return uuid;
-    };
 }

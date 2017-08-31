@@ -42,6 +42,8 @@ $root: '.d-checkbox';
 
 .d-checkbox {
     cursor: pointer;
+    white-space: nowrap;
+    width: 110px;
     &_input {
         position: absolute;
         visibility: hidden;
@@ -72,6 +74,9 @@ $root: '.d-checkbox';
     &_label {
         display: inline-block;
         vertical-align: middle;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        width: 100%;
     }
 }
 </style>
