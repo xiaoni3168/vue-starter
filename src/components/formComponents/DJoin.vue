@@ -4,8 +4,8 @@
             <div class="table-conditions">
                 <d-input :placeholder="`表单名称`"></d-input>
                 <div>条件</div>
-                <div class="table-conditions_fields">
-                    {{`${sourceTableA.name}.${selectedFieldA.name} = ${sourceTableB.name}.${selectedFieldB.name}`}}
+                <div class="table-conditions_fields" v-for="(field, $index) in selectedField" :key="$index">
+                    {{`${sourceTableA.name}.${field.leftTableField.name} = ${sourceTableB.name}.${field.rightTableField.name}`}}
                 </div>
             </div>
             <div>
@@ -79,17 +79,28 @@ export default {
 
             return Object.assign({}, table || {});
         },
-        selectedFieldA: function () {
-            let field;
+        selectedField: function () {
+            let fields = [];
             let operationData = this.getOperationData();
             
-            field = this.sourceTableA.fields.find(f => {
-                if (f.columnId == operationData.leftColumnId) {
-                    return f;
+            operationData.joinColumnPair.forEach(s => {
+                let field = {};
+                for (let i = 0; i < this.sourceTableA.fields.length; i++) {
+                    if (this.sourceTableA.fields[i].columnId == s.leftColumnId) {
+                        field.leftTableField = this.sourceTableA.fields[i];
+                        break;
+                    }
                 }
+                for (let i = 0; i < this.sourceTableB.fields.length; i++) {
+                    if (this.sourceTableB.fields[i].columnId == s.rightColumnId) {
+                        field.rightTableField = this.sourceTableB.fields[i];
+                        break;
+                    }
+                }
+                fields.push(field);
             });
 
-            return field || {};
+            return fields;
         },
         sourceTableB: function () {
             let table;
@@ -125,16 +136,19 @@ export default {
             return Object.assign({}, table || {});
         },
         selectedFieldB: function () {
-            let field;
+            let fields = [];
             let operationData = this.getOperationData();
-
-            field = this.sourceTableB.fields.find(f => {
-                if (f.columnId == operationData.rightColumnId) {
-                    return f;
-                }
-            });
             
-            return field || {};
+            operationData.joinColumnPair.forEach(s => {
+                for (let i = 0; i < this.sourceTableB.fields.length; i++) {
+                    if (this.sourceTableA.fields[i].columnId == s.leftColumnId) {
+                        fields.push(this.sourceTableB.fields[i]);
+                        break;
+                    }
+                }
+            })
+
+            return fields;
         }
     },
     mounted () {

@@ -41,14 +41,11 @@ export default {
         }
     },
     created() {
-        console.log('%c Created.', 'color: #2888e5');
-
         EventBus.$on('clicked', clicked => {
             this.clicked = clicked
         });
     },
     mounted() {
-        console.log(this.$d3);        
     },
     computed: {
         ...mapGetters('starter', ['now'])

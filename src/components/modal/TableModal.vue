@@ -9,14 +9,25 @@
             <div v-if="model.type == 'operation' && model.sub == 'join'" class="join-operation">
                 <div v-if="checkProcessDatas()">
                     <div>选择联表字段</div>
-                    <div class="join-operation_fields">
-                        <div class="join-operation_fields--label">{{sourceTableALabel}}</div>
-                        <d-select :by="'columnId'" :items="sourceTableAFields" :selected="operationSelectedA" :placeholder="`选择字段`" @change="fieldAChange"></d-select>
+                    <div v-for="(opt, $index) in optSelect" class="join-operation_wrap" :key="$index">
+                        <div>
+                            <div class="join-operation_fields">
+                                <div class="join-operation_fields--label">{{sourceTableALabel}}</div>
+                                <d-select :by="'columnId'" :data="$index" :items="sourceTableAFields" :selected="opt.operationSelectedA" :placeholder="`选择字段`" @change="fieldAChange"></d-select>
+                            </div>
+                            <div>=</div>
+                            <div class="join-operation_fields">
+                                <div class="join-operation_fields--label">{{sourceTableBLabel}}</div>
+                                <d-select :by="'columnId'" :data="$index" :items="sourceTableBFields" :selected="opt.operationSelectedB" :placeholder="`选择字段`" @change="fieldBChange"></d-select>
+                            </div>
+                        </div>
+                        <div class="join-operation_opt" @click="addOpt">+</div>
                     </div>
-                    <div>=</div>
-                    <div class="join-operation_fields">
-                        <div class="join-operation_fields--label">{{sourceTableBLabel}}</div>
-                        <d-select :by="'columnId'" :items="sourceTableBFields" :selected="operationSelectedB" :placeholder="`选择字段`" @change="fieldBChange"></d-select>
+                    <div>
+                        连接方式
+                    </div>
+                    <div>
+                        <d-select :by="'value'" :items="joinTypes" :placeholder="`选择连接方式`"></d-select>
                     </div>
                 </div>
                 <div v-if="!checkProcessDatas()" class="no-source">
@@ -65,8 +76,31 @@ export default {
             model: config.model ? config.model : {},
             processDatas: null,
 
-            operationSelectedA: stepObject[this.element.config.uuid].leftColumnId,
-            operationSelectedB: stepObject[this.element.config.uuid].rightColumnId
+            optSelect: stepObject[this.element.config.uuid].joinColumnPair || [
+                {
+                    operationSelectedA: '',
+                    operationSelectedB: ''
+                }
+            ],
+
+            joinTypes: [
+                {
+                    label: '左连接',
+                    value: 0
+                },
+                {
+                    label: '右连接',
+                    value: 1
+                },
+                {
+                    label: '外连接',
+                    value: 2
+                },
+                {
+                    label: '内连接',
+                    value: 3
+                }
+            ]
         }
     },
     computed: {
@@ -76,7 +110,6 @@ export default {
             let treeMap = this.element.config.$container.treeMap;
             let stepObject = treeMap[this.element.config.$parentUUID];
             for (let [key, value] of Object.entries(stepObject)) {
-                console.log(value)
                 if (value.type == 'source' && value.sub == 'leftTable') {
                     tableA = this.tables.find(table => {
                         if (table.id == value.tableId) {
@@ -155,16 +188,22 @@ export default {
             return array;
         },
         selectedChange: function (payment) {
-            this.selected = payment;
+            this.selected = payment.select;
         },
         fieldAChange: function (payment) {
-            this.operationSelectedA = payment;
+            this.optSelect[payment.data].operationSelectedA = payment.select;
         },
         fieldBChange: function (payment) {
-            this.operationSelectedB = payment;
+            this.optSelect[payment.data].operationSelectedB = payment.select;
         },
         closeModal: function () {
             this.$emit('close');
+        },
+        addOpt: function () {
+            this.optSelect.push({
+                operationSelectedA: '',
+                operationSelectedB: ''
+            });
         },
         saveModal: function () {
             let payment = null;
@@ -174,11 +213,19 @@ export default {
                 });
             }
             if (this.model.type == 'operation' && this.model.sub == 'join') {
+                let joinColumnPair = [];
+                for (let i = 0; i < this.optSelect.length; i++) {
+                    joinColumnPair.push({
+                        leftColumnId: this.optSelect[i].operationSelectedA,
+                        rightColumnId: this.optSelect[i].operationSelectedB,
+                        operationSelectedA: this.optSelect[i].operationSelectedA,
+                        operationSelectedB: this.optSelect[i].operationSelectedB
+                    });
+                }
                 this.updateTreeMap({
                     leftTableId: this.sourceTableA.id,
                     rightTableId: this.sourceTableB.id,
-                    leftColumnId: this.operationSelectedA,
-                    rightColumnId: this.operationSelectedB
+                    joinColumnPair: joinColumnPair
                 });
             }
             if (this.model.type == 'target' && this.model.sub == 'join') {
@@ -198,7 +245,8 @@ export default {
                                 data.fields.push({
                                     columnId: Util.uuid(),
                                     name: `${this.getTable(value.leftTableId).name}.${f.name}`,
-                                    sourceColumnId: f.columnId
+                                    sourceColumnId: f.columnId,
+                                    targetTableId: value.leftTableId
                                 });
                             }
                         })
@@ -207,7 +255,8 @@ export default {
                                 data.fields.push({
                                     columnId: Util.uuid(),
                                     name: `${this.getTable(value.rightTableId).name}.${f.name}`,
-                                    sourceColumnId: f.columnId
+                                    sourceColumnId: f.columnId,
+                                    targetTableId: value.rightTableId
                                 });
                             }
                         });
@@ -273,12 +322,27 @@ export default {
         overflow: scroll;
         flex-grow: 1;
         .join-operation {
+            &_wrap {
+                display: flex;
+                align-items: center;
+                margin: 10px 0;
+            }
             &_fields {
                 display: flex;
                 align-items: baseline;
                 &--label {
                     white-space: nowrap;
                 }
+            }
+            &_opt {
+                height: 30px;
+                width: 30px;
+                line-height: 30px;
+                border: 1px solid #666666;
+                border-radius: 100%;
+                text-align: center;
+                cursor: pointer;
+                margin: 0 auto;
             }
         }
         .no-source {

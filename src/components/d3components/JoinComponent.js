@@ -372,7 +372,6 @@ export default class JoinComponent extends D3Shape {
 
                 if (hook.connector) {
                     setTimeout(() => {
-                        console.log(this.container.map['dc4fd082-2d1b-4d40-e999-36ccdce77b43'])
                         let [_key, _value] = Object.entries(hook.connector)[0];
                         let _core = this.container.map[_key];
                         line = new D3Line(container, {

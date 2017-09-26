@@ -33,6 +33,7 @@ import { directive as onClickaway } from 'vue-clickaway';
 export default {
     props: {
         by: String,
+        data: null,
         items: Array,
         placeholder: String,
         selected: String
@@ -72,7 +73,7 @@ export default {
             this.closeDropdown();
 
             this.selectedItem = item[this.by];
-            this.$emit('change', this.selectedItem);
+            this.$emit('change', { select: this.selectedItem, data: this.data });
         }
     }
 }

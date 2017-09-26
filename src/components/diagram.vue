@@ -12,6 +12,7 @@
                 <div class="zoomout" @click="zoomout">+</div>
                 <div class="zoomin" @click="zoomin">-</div>
                 <div class="reset" @click="resetview">&reg;</div>
+                <div class="save" @click="save">save</div>
             </div>
         </div>
         <transition name="fade" @before-enter="beforeModalEnter">
@@ -106,6 +107,8 @@ export default {
             dragElement: null,
 
             initDiagram: null,
+
+            ray: [0, 0],
 
             // mock data
             // settingModal: {
@@ -464,6 +467,47 @@ export default {
             Vue.util.extend(this.boundary, this.oBoundary);
         },
 
+        save: function () {
+            let pipline = [];
+            for (let [key, value] of Object.entries(this.container.treeMap)) {
+                let step = {};
+
+                step.stepId = key;
+                step.type = value.type;
+
+                for (let [k, v] of Object.entries(value)) {
+                    /**join joinColumnPairs */
+                    if (step.type == 'join') {
+                        if (v.type == 'operation') {
+                            console.log(v);
+                            step.leftSourceTableId = v.leftTableId;
+                            step.rightSourceTableId = v.rightTableId;
+                            step.joinColumnPair = v.joinColumnPair.map(x => {
+                                return {
+                                    leftKeyId: x.leftColumnId,
+                                    rightKeyId: x.rightColumnId
+                                }
+                            });
+                        }
+                        if (v.type == 'target' && !v.stream) {
+                            step.targetTableId = v.tableId;
+                            step.mappingColumnPairs = [];
+                            v.fields.forEach(field => {
+                                step.mappingColumnPairs.push({
+                                    targetTableId: field.targetTableId,
+                                    sourceColumnId: field.sourceColumnId,
+                                    columnId: field.columnId
+                                });
+                            });
+                        }
+                    }
+                }
+
+                pipline.push(step);
+            }
+            console.log(pipline);
+        },
+
         /**
          * 关闭设置modal
          */
@@ -721,40 +765,55 @@ export default {
         border: 1px solid #ccc;
         margin: 30px 10px;
         overflow: scroll;
+        position: relative;
 
         .zoom-btn {
-            width: 150px;
+            width: 200px;
             height: 30px;
             position: absolute;
             border: 1px solid #999999;
             border-radius: 3px;
             .zoomout {
                 float: left;
-                width: 33%;
+                width: 25%;
                 height: 100%;
                 text-align: center;
                 line-height: 30px;
                 cursor: pointer;
                 border-right: 1px solid #999999;
+                box-sizing: border-box;
             }
             .zoomin {
                 float: left;
-                width: 32%;
+                width: 25%;
                 height: 100%;
                 text-align: center;
                 line-height: 30px;
                 cursor: pointer;
                 border-right: 1px solid #999999;
+                box-sizing: border-box;
             }
             .reset {
                 float: left;
-                width: 33%;
+                width: 25%;
                 height: 100%;
                 text-align: center;
                 line-height: 30px;
                 cursor: pointer;
+                border-right: 1px solid #999999;
+                box-sizing: border-box;
+            }
+            .save {
+                float: left;
+                width: 25%;
+                height: 100%;
+                text-align: center;
+                line-height: 30px;
+                cursor: pointer;
+                box-sizing: border-box;
             }
         }
+
     }
 
     .setting-modal {
