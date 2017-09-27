@@ -8,12 +8,10 @@ import DiagramCanvas from './components/DiagramCanvas.vue';
 
 import plugins from './plugins/plugins';
 import VueD3 from './plugins/vue-d3';
-import jsPlumb from './plugins/vue-jsplumb';
 
 Vue.use(VueRouter);
 Vue.use(plugins);
 Vue.use(VueD3);
-Vue.use(jsPlumb);
 
 const routes = [{
     name: 'home',
