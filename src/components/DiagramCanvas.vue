@@ -14,7 +14,6 @@
                 </div>
             </div>
         </div>
-        <button type="button" name="button" @click="click">click</button>
     </div>
 </template>
 <script type="text/javascript">
@@ -47,8 +46,8 @@ export default {
         this.D3Diagram.init({
             dom: '#canvas',
             config: {
-                "height": 500,
-                "width": 800
+                "height": 800,
+                "width": 1200
             }
         });
         /** 初始化toolbox（拖拽） */

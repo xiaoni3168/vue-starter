@@ -115,6 +115,7 @@ export default class D3Diagram {
             .attr('data-uid',       d => d.uid)
             /** rect元素连接点绘制 */
             .each(drawHook)
+            .on('mouseup', rectMouseUp)
             /** rect元素添加到画布的动画效果添加 */
             .classed('animated jelly', true)
             .style('transform-origin', 'center');
@@ -174,26 +175,7 @@ export default class D3Diagram {
                 /** 连线终止 */
                 .on('mouseup', function () {
                     if (_this.connecting) {
-                        /** 将连接成功的线绘制到画布 */
-                        _this.connector.attr('d', function (_d) {
-                            _this.line([
-                                {
-                                    x1: _d.x1,
-                                    y1: _d.y1,
-                                    x2: d.x - 5,
-                                    y2: d.y + d.height / 2,
-                                    strokeDasharray: '5,3',
-                                    inUID: _this.connector.attr('input-uid'),   // 连线 start 连接的rect元素uid
-                                    outUID: d.uid                               // 连线 end 连接的rect元素uid
-                                }
-                            ]);
-                        });
-                        /** 去掉rect元素上连线point的connecting样式(标记为非连接状态) */
-                        _this.$d3.select(`circle[bind-uid="${_this.connector.attr('input-uid')}"]`).classed('connecting', false);
-                        /** 清空鼠标连线 */
-                        _this.connector.remove();
-                        _this.connector = null;
-                        _this.connecting = false;
+                        drawLineToCanvas(d);
                     }
                 })
                 .style('transform-origin', `${d.x + d.width / 2}px center`) : void 0;
@@ -311,7 +293,7 @@ export default class D3Diagram {
          * @param  {[type]} d [description]
          * @return {[type]}   [description]
          */
-        function dragended(d) {
+        function dragended (d) {
             /** 去掉rect元素的拖动样式 */
             _this.$d3.select(this).classed('dragging', false);
 
@@ -329,6 +311,44 @@ export default class D3Diagram {
                     _this.$d3.select(this).classed('focused', true);
                 }
             }
+        }
+
+        /**
+         * 鼠标在rect元素上抬起时，绘制连线
+         * @param  {[type]} d [description]
+         * @return {[type]}   [description]
+         */
+        function rectMouseUp (d) {
+            if (_this.connecting) {
+                drawLineToCanvas(d);
+            }
+        }
+
+        /**
+         * 将连接成功的线绘制到画布
+         * @param  {[type]} d [description]
+         * @return {[type]}   [description]
+         */
+        function drawLineToCanvas (d) {
+            _this.connector.attr('d', function (_d) {
+                _this.line([
+                    {
+                        x1: _d.x1,
+                        y1: _d.y1,
+                        x2: d.x - 5,
+                        y2: d.y + d.height / 2,
+                        strokeDasharray: '5,3',
+                        inUID: _this.connector.attr('input-uid'),   // 连线 start 连接的rect元素uid
+                        outUID: d.uid                               // 连线 end 连接的rect元素uid
+                    }
+                ]);
+            });
+            /** 去掉rect元素上连线point的connecting样式(标记为非连接状态) */
+            _this.$d3.select(`circle[bind-uid="${_this.connector.attr('input-uid')}"]`).classed('connecting', false);
+            /** 清空鼠标连线 */
+            _this.connector.remove();
+            _this.connector = null;
+            _this.connecting = false;
         }
 
         return this.instance;
