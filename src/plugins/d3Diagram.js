@@ -152,7 +152,8 @@ export default class D3Diagram {
                 .on('mousedown', function () {
                     _this.connecting = true;
                     /** 创建鼠标连线 */
-                    _this.connector = _this.instance
+                    _this.connector = _this.instance.append('g').attr('input-uid', d.uid);
+                    _this.connector
                         .selectAll('path.connector') // 此处加上.connector是为了让d3选择器选择一个空节点来填充数据
                         .data([{ x1: d.x + d.width + 4, y1: d.y + d.height / 2, x2: d.x + d.width + 4, y2: d.y + d.height / 2 }])
                         .enter()
@@ -201,6 +202,12 @@ export default class D3Diagram {
                     _this.$d3.selectAll(`[bind-uid="${d.uid}"]`).each(function () {
                         _this.$d3.select(this).remove();
                     });
+                    _this.$d3.selectAll(`[in-uid="${d.uid}"]`).each(function () {
+                        _this.$d3.select(this).remove();
+                    });
+                    _this.$d3.selectAll(`[out-uid="${d.uid}"]`).each(function () {
+                        _this.$d3.select(this).remove();
+                    });
                     _this.$d3.select(`[data-uid="${d.uid}"]`).remove();
                 });
 
@@ -210,7 +217,7 @@ export default class D3Diagram {
              */
             function drawLineMove () {
                 if (_this.connecting) {
-                    _this.connector.attr('d', function (_d) {
+                    _this.connector.select('path').attr('d', function (_d) {
                         return `M ${_d.x1} ${_d.y1} L ${_d.x2 = _this.$d3.event.x - 4} ${_d.y2 = _this.$d3.event.y}`;
                     });
                 }
@@ -277,19 +284,29 @@ export default class D3Diagram {
             _this.$d3.select(`use[bind-uid="${d.uid}"]`).attr('x', _this.$d3.event.x + d.width - 12).attr('y', _this.$d3.event.y + 4);
 
             // 线的拖动
-            _this.$d3.selectAll(`path[in-uid="${d.uid}"]`).each(function () {
+            _this.$d3.selectAll(`g[in-uid="${d.uid}"]`).each(function () {
                 _this.$d3
                     .select(this)
-                    .attr('d', function (_d) {
-                        return `M ${_d.x1 = _this.$d3.event.x + d.width} ${_d.y1 = _this.$d3.event.y + d.height / 2} L ${_d.x2} ${_d.y2}`;
-                    })
+                    .selectAll('path')
+                    .each(function () {
+                        _this.$d3
+                            .select(this)
+                            .attr('d', function (_d) {
+                                return `M ${_d.x1 = _this.$d3.event.x + d.width} ${_d.y1 = _this.$d3.event.y + d.height / 2} L ${_d.x2} ${_d.y2}`;
+                            });
+                    });
             });
-            _this.$d3.selectAll(`path[out-uid="${d.uid}"]`).each(function () {
+            _this.$d3.selectAll(`g[out-uid="${d.uid}"]`).each(function () {
                 _this.$d3
                     .select(this)
-                    .attr('d', function (_d) {
-                        return `M ${_d.x1} ${_d.y1} L ${_d.x2 = _this.$d3.event.x} ${_d.y2 = _this.$d3.event.y + d.height / 2}`;
-                    })
+                    .selectAll('path')
+                    .each(function () {
+                        _this.$d3
+                            .select(this)
+                            .attr('d', function (_d) {
+                                return `M ${_d.x1} ${_d.y1} L ${_d.x2 = _this.$d3.event.x} ${_d.y2 = _this.$d3.event.y + d.height / 2}`;
+                            });
+                    });
             });
         }
 
@@ -363,7 +380,7 @@ export default class D3Diagram {
          * @return {[type]}   [description]
          */
         function drawLineToCanvas (d) {
-            _this.connector.attr('d', function (_d) {
+            _this.connector.select('path').attr('d', function (_d) {
                 _this.line([
                     {
                         x1: _d.x1,
@@ -388,19 +405,37 @@ export default class D3Diagram {
     }
 
     line (configs = []) {
-        let lineData = this.instance
-            .selectAll('path.connected')
+        const _this = this;
+        let lineData;
+
+        lineData = this.instance
+            .selectAll('g.connected')
             .data(configs)
             .enter()
-            .append('path')
-            .attr('d', d => {
-                return `M ${d.x1} ${d.y1} L ${d.x2} ${d.y2}`;
-            })
-            .attr('stroke-dasharray', d => d.strokeDasharray)
-            .attr('fill', 'none')
-            .attr('stroke', '#cccccc')
-            .attr('stroke-width', 1)
+            .append('g')
             .attr('in-uid', d => d.inUID)
             .attr('out-uid', d => d.outUID)
+            .each(function (d) {
+                _this.$d3
+                    .select(this)
+                    .append('path')
+                    .attr('d', d => {
+                        return `M ${d.x1} ${d.y1} L ${d.x2} ${d.y2}`;
+                    })
+                    .attr('stroke-dasharray', d => d.strokeDasharray)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#cccccc')
+                    .attr('stroke-width', 1)
+                _this.$d3
+                    .select(this)
+                    .append('path')
+                    .attr('d', d => {
+                        return `M ${d.x1} ${d.y1} L ${d.x2} ${d.y2}`;
+                    })
+                    .attr('fill', 'none')
+                    .attr('stroke', '#cccccc')
+                    .attr('stroke-width', 10)
+                    .attr('stroke-opacity', 0)
+            });
     }
 }
