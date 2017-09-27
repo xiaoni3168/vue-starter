@@ -3,6 +3,8 @@
  *
  * 该方法在项目初始化的时候写入plugin
  * 可通过 this.D3Diagram 访问
+ *
+ * TODO: 连线的拐角以及拐角处圆弧的计算
  */
 export default class D3Diagram {
     constructor ($d3) {
@@ -115,7 +117,10 @@ export default class D3Diagram {
             .attr('data-uid',       d => d.uid)
             /** rect元素连接点绘制 */
             .each(drawHook)
+            /** rect元素上 mouseup 事件(用于：连线) */
             .on('mouseup', rectMouseUp)
+            .on('mouseover', rectMouseOver)
+            .on('mouseleave', rectMouseLeave)
             /** rect元素添加到画布的动画效果添加 */
             .classed('animated jelly', true)
             .style('transform-origin', 'center');
@@ -206,7 +211,7 @@ export default class D3Diagram {
             function drawLineMove () {
                 if (_this.connecting) {
                     _this.connector.attr('d', function (_d) {
-                        return `M ${_d.x1} ${_d.y1} L ${_d.x2 = _this.$d3.event.x - 2} ${_d.y2 = _this.$d3.event.y}`;
+                        return `M ${_d.x1} ${_d.y1} L ${_d.x2 = _this.$d3.event.x - 4} ${_d.y2 = _this.$d3.event.y}`;
                     });
                 }
             }
@@ -218,7 +223,7 @@ export default class D3Diagram {
             function drawLineUp () {
                 if (_this.connecting) {
                     /** 去掉rect元素上连线point的connecting样式(标记为非连接状态) */
-                    _this.$d3.select(`circle[bind-uid="${d.uid}"]`).classed('connecting', false);
+                    _this.$d3.select(`circle[bind-uid="${_this.connector.attr('input-uid')}"]`).classed('connecting', false);
                     /** 清空鼠标连线 */
                     _this.connector.remove();
                     _this.connector = null;
@@ -320,7 +325,35 @@ export default class D3Diagram {
          */
         function rectMouseUp (d) {
             if (_this.connecting) {
-                drawLineToCanvas(d);
+                if (_this.$d3.select(this).classed('connecting-unabled')) {
+                    _this.$d3.select(this).classed('connecting-unabled', false);
+                } else if (_this.connector.attr('input-uid') != d.uid) {
+                    drawLineToCanvas(d);
+                }
+            }
+        }
+
+        /**
+         * 鼠标移动到rect元素上时，处理事件
+         * @param  {[type]} d [description]
+         * @return {[type]}   [description]
+         */
+        function rectMouseOver (d) {
+            if (_this.connecting) {
+                if(_this.$d3.select(`path[bind-uid="${d.uid}"]`).empty() && _this.connector.attr('input-uid') != d.uid) {
+                    _this.$d3.select(this).classed('connecting-unabled', true);
+                }
+            }
+        }
+
+        /**
+         * 鼠标离开rect元素时，处理事件
+         * @param  {[type]} d [description]
+         * @return {[type]}   [description]
+         */
+        function rectMouseLeave (d) {
+            if (_this.connecting) {
+                _this.$d3.select(this).classed('connecting-unabled', false);
             }
         }
 

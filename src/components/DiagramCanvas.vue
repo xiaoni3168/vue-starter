@@ -174,6 +174,10 @@ export default {
                 stroke: #a9c714;
                 stroke-width: 2;
             }
+            &.connecting-unabled {
+                stroke: #ff4747;
+                stroke-width: 2;
+            }
         }
 
         circle {
