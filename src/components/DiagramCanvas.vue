@@ -123,36 +123,65 @@ export default {
                             document.querySelector('#canvas').appendChild(cloneNode);
                         })
                 });
-            this.D3Diagram
-                .getInstance()
-                .on('mousemove', function () {
-                    if (cloneNode) {
-                        _d3.select(cloneNode).style('transform', `translate(${_d3.event.x - 85}px, ${_d3.event.y - 20}px)`);
-                    }
-                })
-                .on('mouseup', function () {
-                    if (cloneNode) {
-                        _d3.select('.diagram-content-toolbox').style('pointer-events', 'all');
 
-                        _this.addRect([
-                            {
-                                "uid": Utils.uuid(),
-                                "x": _d3.event.x - 40,
-                                "y": _d3.event.y - 40,
-                                "width": 80,
-                                "height": 80,
-                                "rx": 10,
-                                "ry": 10,
-                                "stroke": '#cccccc',
-                                "fill": '#f5f5f5',
-                                "type": _d3.select(cloneNode).attr('e-type')
-                            }
-                        ]);
+            this.D3Diagram.setMouseMoveFunc(function () {
+                if (cloneNode) {
+                    _d3.select(cloneNode).style('transform', `translate(${_d3.event.x - 85}px, ${_d3.event.y - 20}px)`);
+                }
+            });
+            this.D3Diagram.setMouseUpFuncs(function () {
+                if (cloneNode) {
+                    _d3.select('.diagram-content-toolbox').style('pointer-events', 'all');
 
-                        _d3.select(cloneNode).remove();
-                        cloneNode = null;
-                    }
-                })
+                    _this.addRect([
+                        {
+                            "uid": Utils.uuid(),
+                            "x": _d3.event.x - 40,
+                            "y": _d3.event.y - 40,
+                            "width": 80,
+                            "height": 80,
+                            "rx": 10,
+                            "ry": 10,
+                            "stroke": '#cccccc',
+                            "fill": '#f5f5f5',
+                            "type": _d3.select(cloneNode).attr('e-type')
+                        }
+                    ]);
+
+                    _d3.select(cloneNode).remove();
+                    cloneNode = null;
+                }
+            });
+            // this.D3Diagram
+            //     .getInstance()
+            //     .on('mousemove', function () {
+            //         if (cloneNode) {
+            //             _d3.select(cloneNode).style('transform', `translate(${_d3.event.x - 85}px, ${_d3.event.y - 20}px)`);
+            //         }
+            //     })
+            //     .on('mouseup', function () {
+            //         if (cloneNode) {
+            //             _d3.select('.diagram-content-toolbox').style('pointer-events', 'all');
+            //
+            //             _this.addRect([
+            //                 {
+            //                     "uid": Utils.uuid(),
+            //                     "x": _d3.event.x - 40,
+            //                     "y": _d3.event.y - 40,
+            //                     "width": 80,
+            //                     "height": 80,
+            //                     "rx": 10,
+            //                     "ry": 10,
+            //                     "stroke": '#cccccc',
+            //                     "fill": '#f5f5f5',
+            //                     "type": _d3.select(cloneNode).attr('e-type')
+            //                 }
+            //             ]);
+            //
+            //             _d3.select(cloneNode).remove();
+            //             cloneNode = null;
+            //         }
+            //     })
         }
     }
 }
@@ -182,6 +211,9 @@ export default {
             cursor: pointer;
             transition: fill .17s;
             &:hover {
+                fill: #5abeff;
+            }
+            &.connecting {
                 fill: #5abeff;
             }
         }
