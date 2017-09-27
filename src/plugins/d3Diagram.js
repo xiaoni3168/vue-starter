@@ -387,19 +387,21 @@ export default class D3Diagram {
          * @return {[type]}   [description]
          */
         function drawLineToCanvas (d) {
-            _this.connector.select('path').attr('d', function (_d) {
-                _this.line([
-                    {
-                        x1: _d.x1,
-                        y1: _d.y1,
-                        x2: d.x - 5,
-                        y2: d.y + d.height / 2,
-                        strokeDasharray: '5,3',
-                        inUID: _this.connector.attr('input-uid'),   // 连线 start 连接的rect元素uid
-                        outUID: d.uid                               // 连线 end 连接的rect元素uid
-                    }
-                ]);
-            });
+            if (_this.$d3.select(`g[out-uid="${d.uid}"]`).empty()) {
+                _this.connector.select('path').attr('d', function (_d) {
+                    _this.line([
+                        {
+                            x1: _d.x1,
+                            y1: _d.y1,
+                            x2: d.x - 5,
+                            y2: d.y + d.height / 2,
+                            strokeDasharray: '5,3',
+                            inUID: _this.connector.attr('input-uid'),   // 连线 start 连接的rect元素uid
+                            outUID: d.uid                               // 连线 end 连接的rect元素uid
+                        }
+                    ]);
+                });
+            }
             /** 去掉rect元素上连线point的connecting样式(标记为非连接状态) */
             _this.$d3.select(`circle[bind-uid="${_this.connector.attr('input-uid')}"]`).classed('connecting', false);
             /** 清空鼠标连线 */
