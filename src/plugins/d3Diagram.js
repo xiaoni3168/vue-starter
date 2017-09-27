@@ -123,7 +123,12 @@ export default class D3Diagram {
             .on('mouseleave', rectMouseLeave)
             /** rect元素添加到画布的动画效果添加 */
             .classed('animated jelly', true)
-            .style('transform-origin', 'center');
+            .attr('style',          d => {
+                return `
+                    transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;
+                    -moz-transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;
+                `
+            })
 
         /** rect元素拖拽事件 */
         rectData.call(
@@ -168,7 +173,8 @@ export default class D3Diagram {
                     /** 添加rect元素上连线point的connecting样式(标记为连接状态) */
                     _this.$d3.select(this).classed('connecting', true);
                 })
-                .style('transform-origin', `${d.x + d.width / 2}px center`) : void 0;
+                .style('-moz-transform-origin', `${d.x + d.width / 2}px ${d.y + d.height / 2}px`)
+                .style('transform-origin', `${d.x + d.width / 2}px ${d.y + d.height / 2}px`) : void 0;
             _this.$d3.set(['operation'])
                 .has(d.type) ? _this.instance  // input
                 .append('path')
@@ -184,7 +190,8 @@ export default class D3Diagram {
                         drawLineToCanvas(d);
                     }
                 })
-                .style('transform-origin', `${d.x + d.width / 2}px center`) : void 0;
+                .style('-moz-transform-origin', `${d.x + d.width / 2}px ${d.y + d.height / 2}px`)
+                .style('transform-origin', `${d.x + d.width / 2}px ${d.y + d.height / 2}px`) : void 0;
             /** 将鼠标画线事件添加到画布 MouseEvent 的事件调用栈中 */
             _this.setMouseMoveFunc(drawLineMove);
             _this.setMouseUpFuncs(drawLineUp);
