@@ -124,10 +124,7 @@ export default class D3Diagram {
             /** rect元素添加到画布的动画效果添加 */
             .classed('animated jelly', true)
             .attr('style',          d => {
-                return `
-                    transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;
-                    -moz-transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;
-                `
+                return `transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;-moz-transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;`;
             })
 
         /** rect元素拖拽事件 */
@@ -169,7 +166,8 @@ export default class D3Diagram {
                         .attr('fill', 'none')
                         .attr('stroke', '#5abeff')
                         .attr('stroke-width', 2)
-                        .attr('input-uid', d.uid);
+                        .attr('input-uid', d.uid)
+                        .style('pointer-events', 'none');
                     /** 添加rect元素上连线point的connecting样式(标记为连接状态) */
                     _this.$d3.select(this).classed('connecting', true);
                 })
@@ -327,7 +325,7 @@ export default class D3Diagram {
             _this.$d3.select(this).classed('dragging', false);
 
             /** 模拟rect元素上的click事件 */
-            if (_this.$d3.event.sourceEvent.timeStamp - vTime < 300) {
+            if (_this.$d3.event.sourceEvent.timeStamp - vTime < 200) {
                 /** 展示或隐藏rect元素上的关闭按钮 */
                 let close = _this.$d3.select(`use[bind-uid="${_this.$d3.select(this).attr('data-uid')}"]`);
                 if (close.node().style.display === 'block') {
@@ -364,9 +362,26 @@ export default class D3Diagram {
          */
         function rectMouseOver (d) {
             if (_this.connecting) {
-                if(_this.$d3.select(`path[bind-uid="${d.uid}"]`).empty() && _this.connector.attr('input-uid') != d.uid) {
+                if(_this.$d3.select(`path[bind-uid="${d.uid}"]`).empty() || _check()) {
                     _this.$d3.select(this).classed('connecting-unabled', true);
                 }
+            }
+
+            // 条件判断
+            function _check () {
+                let check = false;
+
+                if (!_this.$d3.select(`g[in-uid="${_this.connector.attr('input-uid')}"]`).empty()) {
+                    _this.$d3
+                        .selectAll(`g[in-uid="${_this.connector.attr('input-uid')}"]`)
+                        .each(function () {
+                            if (_this.$d3.select(this).attr('out-uid') == d.uid) {
+                                check = true;
+                            }
+                        })
+                }
+
+                return check;
             }
         }
 
@@ -387,7 +402,7 @@ export default class D3Diagram {
          * @return {[type]}   [description]
          */
         function drawLineToCanvas (d) {
-            if (_this.$d3.select(`g[out-uid="${d.uid}"]`).empty()) {
+            if (_this.$d3.select(`g[out-uid="${d.uid}"]`).empty() || _this.$d3.select(`g[out-uid="${d.uid}"]`).attr('in-uid') != _this.connector.attr('input-uid')) {
                 _this.connector.select('path').attr('d', function (_d) {
                     _this.line([
                         {
