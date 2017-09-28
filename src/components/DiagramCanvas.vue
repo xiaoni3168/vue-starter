@@ -197,6 +197,17 @@ export default {
             &:hover {
                 fill: #5abeff;
             }
+            &[data-type]:hover {
+                fill: none;
+                & + use {
+                    display: block;
+                    cursor: pointer;
+                    &:hover {
+                        display: block;
+                        fill: #ff4747;
+                    }
+                }
+            }
         }
     }
 

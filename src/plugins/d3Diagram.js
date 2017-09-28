@@ -292,16 +292,13 @@ export default class D3Diagram {
             _this.$d3.selectAll(`g[in-uid="${d.uid}"]`).each(function () {
                 _this.$d3
                     .select(this)
-                    .selectAll('path')
-                    .each(function () {
-                        _this.$d3
-                            .select(this)
-                            .attr('d', function (_d) {
-                                return `M ${_d.x1 = _this.$d3.event.x + d.width} ${_d.y1 = _this.$d3.event.y + d.height / 2} L ${_d.x2} ${_d.y2}`;
-                            });
-                    });
-            });
-            _this.$d3.selectAll(`g[out-uid="${d.uid}"]`).each(function () {
+                    .select('use')
+                    .attr('x', function (_d) {
+                        return (_d.x2 - (_d.x1 = _this.$d3.event.x + d.width)) / 2 + (_d.x1 = _this.$d3.event.x + d.width) - 8;
+                    })
+                    .attr('y', function (_d) {
+                        return (_d.y2 - (_d.y1 = _this.$d3.event.y + d.height / 2)) / 2 + (_d.y1 = _this.$d3.event.y + d.height / 2);
+                    })
                 _this.$d3
                     .select(this)
                     .selectAll('path')
@@ -309,7 +306,46 @@ export default class D3Diagram {
                         _this.$d3
                             .select(this)
                             .attr('d', function (_d) {
-                                return `M ${_d.x1} ${_d.y1} L ${_d.x2 = _this.$d3.event.x} ${_d.y2 = _this.$d3.event.y + d.height / 2}`;
+                                return _this.calculateLine({
+                                    p1: {
+                                        x: _d.x1 = _this.$d3.event.x + d.width,
+                                        y: _d.y1 = _this.$d3.event.y + d.height / 2
+                                    },
+                                    p2: {
+                                        x: _d.x2,
+                                        y: _d.y2
+                                    }
+                                });
+                            });
+                    });
+            });
+            _this.$d3.selectAll(`g[out-uid="${d.uid}"]`).each(function () {
+                _this.$d3
+                    .select(this)
+                    .select('use')
+                    .attr('x', function (_d) {
+                        return ((_d.x2 = _this.$d3.event.x) - _d.x1) / 2 + _d.x1 - 8;
+                    })
+                    .attr('y', function (_d) {
+                        return ((_d.y2 = _this.$d3.event.y + d.height / 2) - _d.y1) / 2 + _d.y1;
+                    })
+                _this.$d3
+                    .select(this)
+                    .selectAll('path')
+                    .each(function () {
+                        _this.$d3
+                            .select(this)
+                            .attr('d', function (_d) {
+                                return _this.calculateLine({
+                                    p1: {
+                                        x: _d.x1,
+                                        y: _d.y1
+                                    },
+                                    p2: {
+                                        x: _d.x2 = _this.$d3.event.x,
+                                        y: _d.y2 = _this.$d3.event.y + d.height / 2
+                                    }
+                                });
                             });
                     });
             });
@@ -410,7 +446,7 @@ export default class D3Diagram {
                             y1: _d.y1,
                             x2: d.x - 5,
                             y2: d.y + d.height / 2,
-                            strokeDasharray: '5,3',
+                            strokeDasharray: '3,5',
                             inUID: _this.connector.attr('input-uid'),   // 连线 start 连接的rect元素uid
                             outUID: d.uid                               // 连线 end 连接的rect元素uid
                         }
@@ -444,22 +480,89 @@ export default class D3Diagram {
                     .select(this)
                     .append('path')
                     .attr('d', d => {
-                        return `M ${d.x1} ${d.y1} L ${d.x2} ${d.y2}`;
+                        // return `M ${d.x1} ${d.y1} L ${d.x2} ${d.y2}`;
+                        return _this.calculateLine({
+                            p1: { x: d.x1, y: d.y1 },
+                            p2: { x: d.x2, y: d.y2 }
+                        });
                     })
                     .attr('stroke-dasharray', d => d.strokeDasharray)
                     .attr('fill', 'none')
                     .attr('stroke', '#cccccc')
                     .attr('stroke-width', 1)
+                    .attr('data-type', 'connector');
                 _this.$d3
                     .select(this)
                     .append('path')
                     .attr('d', d => {
-                        return `M ${d.x1} ${d.y1} L ${d.x2} ${d.y2}`;
+                        // return `M ${d.x1} ${d.y1} L ${d.x2} ${d.y2}`;
+                        return _this.calculateLine({
+                            p1: { x: d.x1, y: d.y1 },
+                            p2: { x: d.x2, y: d.y2 }
+                        });
                     })
                     .attr('fill', 'none')
                     .attr('stroke', '#cccccc')
                     .attr('stroke-width', 10)
                     .attr('stroke-opacity', 0)
+                    .attr('data-type', 'connector');
+                _this.$d3
+                    .select(this)
+                    .append('use')
+                    .attr('x', (d.x2 - d.x1) / 2 + d.x1 - 8)
+                    .attr('y', (d.y2 - d.y1) / 2 + d.y1)
+                    .attr('fill', '#cccccc')
+                    .attr('xlink:href', '#icon-close')
+            })
+            .on('click', function (d) {
+                _this.$d3.select(this).remove();
             });
+    }
+
+    calculateLine ({ p1, p2 }) {
+        const MAX_ARC_RADIUS = 10;
+
+        let connector = `M ${p1.x} ${p1.y} `;
+
+        connector += line(
+            (p2.x - p1.x) / 2 + p1.x - Math.abs(calculateYDistance()),
+            p1.y
+        );
+        connector += arc(
+            (p2.x - p1.x) / 2 + p1.x,
+            p1.y + calculateYDistance()
+        );
+        connector += line(
+            (p2.x - p1.x) / 2 + p1.x,
+            p2.y - calculateYDistance()
+        );
+        connector += arc(
+            (p2.x - p1.x) / 2 + p1.x + Math.abs(calculateYDistance()),
+            p2.y
+        );
+        connector += line(
+            p2.x,
+            p2.y
+        );
+
+        function line (x, y) {
+            console.log('line', x, y)
+            return `L ${x} ${y} `;
+        }
+
+        function arc (x, y) {
+            console.log('arc', x, y)
+            return `L ${x} ${y} `;
+        }
+
+        function calculateYDistance () {
+            if (Math.abs(p2.y - p1.y) > MAX_ARC_RADIUS) {
+                return p2.y - p1.y > 0 ? MAX_ARC_RADIUS : -MAX_ARC_RADIUS;
+            } else {
+                return p2.y - p1.y;
+            }
+        }
+
+        return connector;
     }
 }
