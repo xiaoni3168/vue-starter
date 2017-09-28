@@ -46,7 +46,7 @@ export default {
         this.D3Diagram.init({
             dom: '#canvas',
             config: {
-                "height": 800,
+                "height": 600,
                 "width": 1200
             }
         });
@@ -199,14 +199,6 @@ export default {
             }
             &[data-type]:hover {
                 fill: none;
-                & + use {
-                    display: block;
-                    cursor: pointer;
-                    &:hover {
-                        display: block;
-                        fill: #ff4747;
-                    }
-                }
             }
         }
     }

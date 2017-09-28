@@ -224,6 +224,16 @@ export default class D3Diagram {
                 if (_this.connecting) {
                     _this.connector.select('path').attr('d', function (_d) {
                         return `M ${_d.x1} ${_d.y1} L ${_d.x2 = _this.$d3.event.x - 4} ${_d.y2 = _this.$d3.event.y}`;
+                        // return _this.calculateLine({
+                        //     p1: {
+                        //         x: _d.x1,
+                        //         y: _d.y1
+                        //     },
+                        //     p2: {
+                        //         x: _d.x2 = _this.$d3.event.x - 4,
+                        //         y: _d.y2 = _this.$d3.event.y
+                        //     }
+                        // });
                     });
                 }
             }
@@ -480,7 +490,6 @@ export default class D3Diagram {
                     .select(this)
                     .append('path')
                     .attr('d', d => {
-                        // return `M ${d.x1} ${d.y1} L ${d.x2} ${d.y2}`;
                         return _this.calculateLine({
                             p1: { x: d.x1, y: d.y1 },
                             p2: { x: d.x2, y: d.y2 }
@@ -495,7 +504,6 @@ export default class D3Diagram {
                     .select(this)
                     .append('path')
                     .attr('d', d => {
-                        // return `M ${d.x1} ${d.y1} L ${d.x2} ${d.y2}`;
                         return _this.calculateLine({
                             p1: { x: d.x1, y: d.y1 },
                             p2: { x: d.x2, y: d.y2 }
@@ -506,13 +514,13 @@ export default class D3Diagram {
                     .attr('stroke-width', 10)
                     .attr('stroke-opacity', 0)
                     .attr('data-type', 'connector');
-                _this.$d3
-                    .select(this)
-                    .append('use')
-                    .attr('x', (d.x2 - d.x1) / 2 + d.x1 - 8)
-                    .attr('y', (d.y2 - d.y1) / 2 + d.y1)
-                    .attr('fill', '#cccccc')
-                    .attr('xlink:href', '#icon-close')
+                // _this.$d3
+                //     .select(this)
+                //     .append('use')
+                //     .attr('x', (d.x2 - d.x1) / 2 + d.x1 - 8)
+                //     .attr('y', (d.y2 - d.y1) / 2 + d.y1)
+                //     .attr('fill', '#cccccc')
+                //     .attr('xlink:href', '#icon-close')
             })
             .on('click', function (d) {
                 _this.$d3.select(this).remove();
@@ -524,35 +532,74 @@ export default class D3Diagram {
 
         let connector = `M ${p1.x} ${p1.y} `;
 
-        connector += line(
+        connector += calculateXDistance() ? line(
             (p2.x - p1.x) / 2 + p1.x - Math.abs(calculateYDistance()),
             p1.y
+        ) : line(
+            p1.x + 20,
+            p1.y
         );
-        connector += arc(
+
+        connector += calculateXDistance() ? arc(
             (p2.x - p1.x) / 2 + p1.x,
-            p1.y + calculateYDistance()
+            p1.y + calculateYDistance(),
+            p2.y > p1.y ? 1 : 0
+        ) : arc(
+            p1.x + 20 + Math.abs(calculateYDistance()),
+            p1.y + calculateYDistance(),
+            p2.y > p1.y ? 1 : 0
         );
-        connector += line(
+
+        if (!calculateXDistance()) {
+            connector += line(
+                p1.x + 20 + Math.abs(calculateYDistance()),
+                (p2.y - p1.y) / 2 + p1.y - calculateYDistance()
+            );
+            connector += arc(
+                p1.x + 20,
+                (p2.y - p1.y) / 2 + p1.y,
+                p2.y > p1.y ? 1 : 0
+            );
+            connector += line(
+                p2.x - 20,
+                (p2.y - p1.y) / 2 + p1.y
+            );
+            connector += arc(
+                p2.x - 20 - Math.abs(calculateYDistance()),
+                (p2.y - p1.y) / 2 + p1.y + calculateYDistance(),
+                p2.y > p1.y ? 0 : 1
+            );
+        }
+
+        connector += calculateXDistance() ? line(
             (p2.x - p1.x) / 2 + p1.x,
             p2.y - calculateYDistance()
+        ) : line(
+            p2.x - 20 - Math.abs(calculateYDistance()),
+            p2.y - calculateYDistance()
         );
-        connector += arc(
+
+        connector += calculateXDistance() ? arc(
             (p2.x - p1.x) / 2 + p1.x + Math.abs(calculateYDistance()),
-            p2.y
+            p2.y,
+            p2.y > p1.y ? 0 : 1
+        ) : arc(
+            p2.x - 20,
+            p2.y,
+            p2.y > p1.y ? 0 : 1
         );
+
         connector += line(
             p2.x,
             p2.y
         );
 
         function line (x, y) {
-            console.log('line', x, y)
             return `L ${x} ${y} `;
         }
 
-        function arc (x, y) {
-            console.log('arc', x, y)
-            return `L ${x} ${y} `;
+        function arc (x, y, d) {
+            return `A 10 10 0 0 ${d} ${x} ${y} `;
         }
 
         function calculateYDistance () {
@@ -560,6 +607,15 @@ export default class D3Diagram {
                 return p2.y - p1.y > 0 ? MAX_ARC_RADIUS : -MAX_ARC_RADIUS;
             } else {
                 return p2.y - p1.y;
+            }
+        }
+
+        function calculateXDistance () {
+            console.log(p2.x - p1.x);
+            if (p2.x - p1.x >= 60) {
+                return true;
+            } else {
+                return false;
             }
         }
 
