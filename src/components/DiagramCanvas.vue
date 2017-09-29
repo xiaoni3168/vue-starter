@@ -93,8 +93,6 @@ export default {
                 .call(
                     _d3.drag()
                         .on('start', function () {
-                            console.log(_d3.event)
-                            console.log(lastX, lastY)
                             dx = _d3.event.sourceEvent.clientX;
                             dy = _d3.event.sourceEvent.clientY;
                         })
@@ -211,41 +209,42 @@ export default {
             fill: #ff4747;
         }
     }
-
-    .diagram-content-toolbox {
-        position: absolute;
-        background-color: #f4f4f4;
-        border-radius: 4px;
-        height: 370px;
-        width: 170px;
-        box-shadow: 0px 2px 0 1px #e4e4e4;
-        &_head {
-            height: 18px;
-            width: 100%;
-            background-color: #e4e4e4;
-            cursor: move;
-            border-radius: 4px 4px 0 0;
-            box-shadow: 0px 1px 0 1px #e4e4e4;
-        }
-        &_elements {
-            &--element {
-                height: 40px;
-                line-height: 40px;
-                display: flex;
-                &.dragging {
-                    width: 170px;
-                    position: absolute;
-                    pointer-events: none;
-                    left: 0;
-                    top: 0;
-                    z-index: 9999;
-                    background-color: #f5f5f5;
-                }
-                .element-icon {
-                    width: 40px;
-                }
-                .element-label {
-                    font-size: 12px;
+    .diagram-content-canvas {
+        .diagram-content-toolbox {
+            position: absolute;
+            background-color: #f4f4f4;
+            border-radius: 4px;
+            height: 370px;
+            width: 170px;
+            box-shadow: 0px 2px 0 1px #e4e4e4;
+            &_head {
+                height: 18px;
+                width: 100%;
+                background-color: #e4e4e4;
+                cursor: move;
+                border-radius: 4px 4px 0 0;
+                box-shadow: 0px 1px 0 1px #e4e4e4;
+            }
+            &_elements {
+                &--element {
+                    height: 40px;
+                    line-height: 40px;
+                    display: flex;
+                    &.dragging {
+                        width: 170px;
+                        position: absolute;
+                        pointer-events: none;
+                        left: 0;
+                        top: 0;
+                        z-index: 9999;
+                        background-color: #f5f5f5;
+                    }
+                    .element-icon {
+                        width: 40px;
+                    }
+                    .element-label {
+                        font-size: 12px;
+                    }
                 }
             }
         }

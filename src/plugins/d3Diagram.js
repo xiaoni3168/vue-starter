@@ -495,7 +495,7 @@ export default class D3Diagram {
                             p2: { x: d.x2, y: d.y2 }
                         });
                     })
-                    .attr('stroke-dasharray', d => d.strokeDasharray)
+                    // .attr('stroke-dasharray', d => d.strokeDasharray)
                     .attr('fill', 'none')
                     .attr('stroke', '#cccccc')
                     .attr('stroke-width', 1)
@@ -528,66 +528,110 @@ export default class D3Diagram {
     }
 
     calculateLine ({ p1, p2 }) {
-        const MAX_ARC_RADIUS = 10;
+        const MAX_ARC_DIAMETER = 20;
 
+        /** 画笔移动到初始点p1 */
         let connector = `M ${p1.x} ${p1.y} `;
+        if ((Math.abs(calculateYDistance()) < 20 && calculateXDistance() < 0) || (Math.abs(calculateYDistance()) < 20 && Math.abs(calculateXDistance()) < 60)) {
 
-        connector += calculateXDistance() ? line(
-            (p2.x - p1.x) / 2 + p1.x - Math.abs(calculateYDistance()),
-            p1.y
-        ) : line(
-            p1.x + 20,
-            p1.y
-        );
-
-        connector += calculateXDistance() ? arc(
-            (p2.x - p1.x) / 2 + p1.x,
-            p1.y + calculateYDistance(),
-            p2.y > p1.y ? 1 : 0
-        ) : arc(
-            p1.x + 20 + Math.abs(calculateYDistance()),
-            p1.y + calculateYDistance(),
-            p2.y > p1.y ? 1 : 0
-        );
-
-        if (!calculateXDistance()) {
-            connector += line(
-                p1.x + 20 + Math.abs(calculateYDistance()),
-                (p2.y - p1.y) / 2 + p1.y - calculateYDistance()
-            );
-            connector += arc(
+        } else {
+            /**
+             * 当点p1在点p2右半侧的时候:
+             *      画直线到 [p1.x + 20, p1.y] 处
+             * 反之:
+             *      画直线到 [(p2.x - p1.x) / 2 + p1.x - Math.abs(calculateYDistance()) / 2, p1.y]
+             */
+            connector += calculateXDistance() > 60 ? line(
+                (p2.x - p1.x) / 2 + p1.x - Math.abs(calculateYDistance()) / 2,
+                p1.y
+            ) : line(
                 p1.x + 20,
-                (p2.y - p1.y) / 2 + p1.y,
-                p2.y > p1.y ? 1 : 0
+                p1.y
             );
-            connector += line(
-                p2.x - 20,
-                (p2.y - p1.y) / 2 + p1.y
-            );
-            connector += arc(
-                p2.x - 20 - Math.abs(calculateYDistance()),
-                (p2.y - p1.y) / 2 + p1.y + calculateYDistance(),
-                p2.y > p1.y ? 0 : 1
-            );
+
+            if (calculateXDistance() > 60) {
+                /** 点p1在点p2左半侧 */
+
+                if (Math.abs(calculateYDistance()) == MAX_ARC_DIAMETER) {
+                    /** 点p1和点p2的y轴距离大于等于拐角圆弧 */
+
+                    connector += curve(
+                        (p2.x - p1.x) / 2 + p1.x,
+                        p1.y + calculateYDistance() / 2,
+                        1
+                    );
+                } else {
+                    /** 点p1和点p2的y轴距离小于拐角圆弧 */
+
+                    connector += curve(
+                        (p2.x - p1.x) / 2 + p1.x + Math.abs(calculateYDistance()) / 2,
+                        p2.y
+                    )
+                }
+            } else {
+                /** 点p1在点p2右半侧 */
+
+                connector += curve(
+                    p1.x + 20 + Math.abs(calculateYDistance()) / 2,
+                    p1.y + calculateYDistance() / 2,
+                    1
+                );
+            }
+
+            if (calculateXDistance() < 60) {
+                if (calculateXDistance() < 40) {
+                    connector += line(
+                        p1.x + 20 + Math.abs(calculateYDistance()) / 2,
+                        (p2.y - p1.y) / 2 + p1.y - calculateYDistance() / 2
+                    );
+                    connector += arc(
+                        p1.x + 20,
+                        (p2.y - p1.y) / 2 + p1.y,
+                        p2.y > p1.y ? 1 : 0
+                    );
+                    connector += line(
+                        p2.x - 20,
+                        (p2.y - p1.y) / 2 + p1.y
+                    );
+                    connector += curve(
+                        p2.x - 20 - Math.abs(calculateYDistance()) / 2,
+                        (p2.y - p1.y) / 2 + p1.y + calculateYDistance() / 2,
+                        1
+                    );
+                } else {
+                    connector += line(
+                        p1.x + 20 + Math.abs(calculateYDistance()) / 2,
+                        (p2.y - p1.y) / 2 + p1.y - calculateYDistance() / 2
+                    );
+                    connector += curveX(
+                        p1.x + 20 + Math.abs(calculateYDistance()) / 2,
+                        (p2.y - p1.y) / 2 + p1.y - calculateYDistance() / 2,
+                        p2.x - 20 - Math.abs(calculateYDistance()) / 2,
+                        (p2.y - p1.y) / 2 + p1.y + calculateYDistance() / 2
+                    );
+                }
+            }
+
+            if (Math.abs(calculateYDistance()) == MAX_ARC_DIAMETER) {
+                connector += calculateXDistance() > 60 ? line(
+                    (p2.x - p1.x) / 2 + p1.x,
+                    p2.y - calculateYDistance() / 2
+                ) : line(
+                    p2.x - 20 - Math.abs(calculateYDistance()) / 2,
+                    p2.y - calculateYDistance() / 2
+                );
+
+                connector += calculateXDistance() > 60 ? curve(
+                    (p2.x - p1.x) / 2 + p1.x + Math.abs(calculateYDistance()) / 2,
+                    p2.y,
+                    0
+                ) : arc(
+                    p2.x - 20,
+                    p2.y,
+                    p2.y > p1.y ? 0 : 1
+                );
+            }
         }
-
-        connector += calculateXDistance() ? line(
-            (p2.x - p1.x) / 2 + p1.x,
-            p2.y - calculateYDistance()
-        ) : line(
-            p2.x - 20 - Math.abs(calculateYDistance()),
-            p2.y - calculateYDistance()
-        );
-
-        connector += calculateXDistance() ? arc(
-            (p2.x - p1.x) / 2 + p1.x + Math.abs(calculateYDistance()),
-            p2.y,
-            p2.y > p1.y ? 0 : 1
-        ) : arc(
-            p2.x - 20,
-            p2.y,
-            p2.y > p1.y ? 0 : 1
-        );
 
         connector += line(
             p2.x,
@@ -602,21 +646,31 @@ export default class D3Diagram {
             return `A 10 10 0 0 ${d} ${x} ${y} `;
         }
 
+        function curve (x, y, d, forceC) {
+            let controlPoint = '';
+            if (Math.abs(calculateYDistance()) == MAX_ARC_DIAMETER && !forceC) {
+                controlPoint = d == 1 ? `${x} ${y - calculateYDistance() / 2}` : `${x - Math.abs(calculateYDistance()) / 2} ${y}`;
+            } else {
+                controlPoint = !forceC ? `${x} ${y - calculateYDistance()} ${x - Math.abs(calculateYDistance())} ${y}` : `${x + 10 - (calculateXDistance() - 40) / 2} ${y} ${x} ${y + 10}`;
+            }
+
+            return `${Math.abs(calculateYDistance()) == MAX_ARC_DIAMETER && !forceC ? 'Q' : 'C'} ${controlPoint} ${x} ${y} `;
+        }
+
+        function curveX (x1, y1, x2, y2) {
+            return `C ${x1} ${(y1 - y2) / 2 + y2} ${x2} ${(y1 - y2) / 2 + y2} ${x2} ${y2}`;
+        }
+
         function calculateYDistance () {
-            if (Math.abs(p2.y - p1.y) > MAX_ARC_RADIUS) {
-                return p2.y - p1.y > 0 ? MAX_ARC_RADIUS : -MAX_ARC_RADIUS;
+            if (Math.abs(p2.y - p1.y) > MAX_ARC_DIAMETER) {
+                return p2.y - p1.y > 0 ? MAX_ARC_DIAMETER : -MAX_ARC_DIAMETER;
             } else {
                 return p2.y - p1.y;
             }
         }
 
         function calculateXDistance () {
-            console.log(p2.x - p1.x);
-            if (p2.x - p1.x >= 60) {
-                return true;
-            } else {
-                return false;
-            }
+            return p2.x - p1.x;
         }
 
         return connector;
