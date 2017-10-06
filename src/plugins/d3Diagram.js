@@ -17,6 +17,9 @@ export default class D3Diagram {
         /** 连线相关变量 */
         this.connecting         = false;    // 当前画布上是否有连线事件
         this.connector          = null;     // 当前画布上正在连接的线 (type: d3.selector)
+
+
+        this.dispatcher = this.$d3.dispatch('rectClick');
     }
 
     /**
@@ -383,6 +386,9 @@ export default class D3Diagram {
 
                     _this.$d3.select(this).classed('focused', true);
                 }
+
+                // 点击元素事件
+                _this.dispatcher.call('rectClick', d);
             }
         }
 
@@ -495,7 +501,7 @@ export default class D3Diagram {
                             p2: { x: d.x2, y: d.y2 }
                         });
                     })
-                    // .attr('stroke-dasharray', d => d.strokeDasharray)
+                    .attr('stroke-dasharray', d => d.strokeDasharray)
                     .attr('fill', 'none')
                     .attr('stroke', '#cccccc')
                     .attr('stroke-width', 1)

@@ -8,7 +8,11 @@
                          v-for="element in elements"
                          :key="element.id"
                          :e-type="element.type">
-                        <span class="element-icon"></span>
+                        <span class="element-icon">
+                            <svg>
+                                <use :xlink:href="'#'element.icon"></use>
+                            </svg>
+                        </span>
                         <span class="element-label">{{element.name}}</span>
                     </div>
                 </div>
@@ -29,7 +33,7 @@ export default {
                     id:   1,
                     name: 'Dataset',
                     type: 'dataset',
-                    icon: 'dataset'
+                    icon: 'icon-add-dataset'
                 },
                 {
                     id:   2,
@@ -52,6 +56,11 @@ export default {
         });
         /** 初始化toolbox（拖拽） */
         this.initToolboxHeader();
+
+
+        this.D3Diagram.dispatcher.on('rectClick', function (d) {
+            console.log(this)
+        })
     },
 
     methods: {
@@ -241,6 +250,12 @@ export default {
                     }
                     .element-icon {
                         width: 40px;
+                        svg {
+                            height: 40px;
+                            width: 40px;
+                            background-color: transparent;
+                            fill: #cccccc;
+                        }
                     }
                     .element-label {
                         font-size: 12px;
