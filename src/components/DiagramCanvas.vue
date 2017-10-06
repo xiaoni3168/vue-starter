@@ -10,7 +10,7 @@
                          :e-type="element.type">
                         <span class="element-icon">
                             <svg>
-                                <use :xlink:href="'#'element.icon"></use>
+                                <use :xlink:href="element.icon"></use>
                             </svg>
                         </span>
                         <span class="element-label">{{element.name}}</span>
@@ -33,7 +33,7 @@ export default {
                     id:   1,
                     name: 'Dataset',
                     type: 'dataset',
-                    icon: 'icon-add-dataset'
+                    icon: '#icon-add-dataset'
                 },
                 {
                     id:   2,
@@ -57,9 +57,8 @@ export default {
         /** 初始化toolbox（拖拽） */
         this.initToolboxHeader();
 
-
-        this.D3Diagram.dispatcher.on('rectClick', function (d) {
-            console.log(this)
+        this.D3Diagram.on('rect_click', function (d) {
+            console.log(this);
         })
     },
 
@@ -165,6 +164,15 @@ export default {
 <style type="scss">
 .diagram-content {
     user-select: none;
+
+    &-canvas {
+        height: 500px;
+        width: 800px;
+        margin: auto;
+        overflow: hidden;
+        position: relative;
+    }
+
     svg {
         background-color: #ffffff;
         rect {

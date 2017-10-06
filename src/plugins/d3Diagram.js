@@ -19,7 +19,7 @@ export default class D3Diagram {
         this.connector          = null;     // 当前画布上正在连接的线 (type: d3.selector)
 
 
-        this.dispatcher = this.$d3.dispatch('rectClick');
+        this.dispatcher = this.$d3.dispatch('rect_click', 'rect_move');
     }
 
     /**
@@ -362,6 +362,8 @@ export default class D3Diagram {
                             });
                     });
             });
+
+            _this.dispatcher.call('rect_move', d);
         }
 
         /**
@@ -388,7 +390,7 @@ export default class D3Diagram {
                 }
 
                 // 点击元素事件
-                _this.dispatcher.call('rectClick', d);
+                _this.dispatcher.call('rect_click', d);
             }
         }
 
@@ -680,5 +682,9 @@ export default class D3Diagram {
         }
 
         return connector;
+    }
+
+    on (type, cb) {
+        this.dispatcher.on(type, cb);
     }
 }
