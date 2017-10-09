@@ -18,6 +18,9 @@ export default class D3Diagram {
         this.connecting         = false;    // 当前画布上是否有连线事件
         this.connector          = null;     // 当前画布上正在连接的线 (type: d3.selector)
 
+        this.containerLeft      = 0;
+        this.containerTop       = 0;
+
 
         this.dispatcher = this.$d3.dispatch('rect_click', 'rect_move');
     }
@@ -31,8 +34,14 @@ export default class D3Diagram {
     init ({ dom, config = {} }) {
         const _this = this;
 
+        this.containerLeft = this.$d3.select(dom).node().offsetLeft;
+
+        this.containerResize(dom);
+
         /** 初始化工具实例 */
-        this.instance = this.$d3.select(dom).append('svg');
+        this.instance = this.$d3.select(dom).append('svg').style('transform', `translate(${-this.containerLeft}px, 0px)`);
+
+        this.dragCanvas();
 
         /** 设置画布 */
         for (let [key, value] of Object.entries(config)) {
@@ -101,6 +110,8 @@ export default class D3Diagram {
 
         let vTime   = 0,    // 计算元素 mousedown 和 mouseup 事件的timeStamp差值，用来模拟 click 事件(vTime < 300ms)
             rectData;       // 画布上所有rect元素数据
+
+        // this.correctPosition(configs);
 
         rectData = this.instance
             .selectAll('rect')
@@ -486,6 +497,8 @@ export default class D3Diagram {
         const _this = this;
         let lineData;
 
+        this.correctPosition(configs);
+
         lineData = this.instance
             .selectAll('g.connected')
             .data(configs)
@@ -686,5 +699,64 @@ export default class D3Diagram {
 
     on (type, cb) {
         this.dispatcher.on(type, cb);
+    }
+
+    containerResize (dom) {
+        const _this = this;
+        window.document.body.onresize = function () {
+            let domHTML =  document.querySelector(dom);
+
+            _this.containerLeft = domHTML.offsetLeft;
+        }
+    }
+
+    correctPosition (configs) {
+        configs.forEach(config => {
+            config.x = config.x - this.containerLeft;
+        });
+    }
+
+    dragCanvas () {
+        const _this = this;
+        let dragging    = false,
+            dx          = 0,
+            dy          = 0;
+
+        this.onMouseDownFuncs.push(function () {
+            _this.$d3.select(this).style('cursor', '-webkit-grabbing');
+            dragging = true;
+
+            dx = _this.$d3.event.x;
+            dy = _this.$d3.event.y;
+        });
+
+        this.onMouseMoveFunc.push(function () {
+            if (dragging) {
+                let selector = _this.$d3.select(this);
+
+                // selector.attr('width', +selector.attr('width') + _this.$d3.event.x - dx);
+                // selector.attr('height', +selector.attr('height') + _this.$d3.event.y - dy);
+
+                selector.selectAll('rect').attr('x', function (d) {
+                    _this.$d3.select(`circle[bind-uid="${d.uid}"]`).attr('cx', d.x + _this.$d3.event.x - dx + d.width);
+                    return d.x + _this.$d3.event.x - dx;
+                });
+
+            }
+        });
+
+        this.onMouseUpFuncs.push(function () {
+            if (dragging) {
+                _this.$d3.select(this).style('cursor', '-webkit-grab');
+
+                let selector = _this.$d3.select(this);
+
+                selector.selectAll('rect').attr('x', function (d) {
+                    return d.x = d.x + _this.$d3.event.x - dx;
+                });
+
+                dragging = false;
+            }
+        });
     }
 }

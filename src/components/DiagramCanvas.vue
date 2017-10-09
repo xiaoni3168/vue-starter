@@ -86,6 +86,7 @@ export default {
         addRect: function (rects = []) {
             let arr = [];
             this.D3Diagram.getInstance().selectAll('rect').each(r => {
+                console.log(r);
                 arr.push(r);
             });
 
@@ -175,6 +176,8 @@ export default {
 
     svg {
         background-color: #ffffff;
+        position: absolute;
+        cursor: grab;
         rect {
             transition: stroke, stroke-width .17s;
             cursor: grab;
@@ -234,6 +237,7 @@ export default {
             height: 370px;
             width: 170px;
             box-shadow: 0px 2px 0 1px #e4e4e4;
+            z-index: 100;
             &_head {
                 height: 18px;
                 width: 100%;
