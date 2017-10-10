@@ -295,6 +295,24 @@ export default class D3Diagram {
                         .attr('style', `transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;-moz-transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;`)
                 }
             }
+            if (d.type == 'operation') {
+                _this.instance
+                    .append('use')
+                    .attr('bind-uid', d.uid)
+                    .attr('bind-uid', d.uid)
+                    .attr('x', d.x + (d.width - 50) / 2)
+                    .attr('y', d.y + (d.height - 50) / 2)
+                    .attr('height', 50)
+                    .attr('width', 50)
+                    .attr('fill', '#cccccc')
+                    .attr('xlink:href', {
+                        'Join': '#icon-duplicate',
+                        'AppendRow': '#icon-nav'
+                    }[d.name])
+                    .classed('icon-dataset', true)
+                    .classed('animated jelly', true)
+                    .attr('style', `transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;-moz-transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;`)
+            }
         }
 
         /**

@@ -7,7 +7,8 @@
                     <div class="diagram-content-toolbox_elements--element"
                          v-for="element in elements"
                          :key="element.id"
-                         :e-type="element.type">
+                         :e-type="element.type"
+                         :e-name="element.name">
                         <span class="element-icon">
                             <svg>
                                 <use :xlink:href="element.icon"></use>
@@ -162,7 +163,8 @@ export default {
                             "ry": 10,
                             "stroke": '#cccccc',
                             "fill": '#f5f5f5',
-                            "type": _d3.select(cloneNode).attr('e-type')
+                            "type": _d3.select(cloneNode).attr('e-type'),
+                            "name": _d3.select(cloneNode).attr('e-name')
                         }
                     ]);
 
