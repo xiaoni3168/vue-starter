@@ -54,6 +54,9 @@ export default {
     },
 
     mounted () {
+        this.D3Diagram.on('onload', function (d) {
+            console.log(d)
+        })
         /** 初始化画布 */
         this.D3Diagram.init({
             dom: '#canvas',
@@ -67,9 +70,15 @@ export default {
 
         window.D3Diagram = this.D3Diagram;
 
-        this.D3Diagram.on('rect_click', function (d) {
-            console.log(this);
-        })
+        this.D3Diagram.on('rect_click', function ({data, event}) {
+
+            if (data.type == 'dataset') {
+                let p = window.prompt();
+                if (p) {
+                    this.repaintRect(Object.assign(data, {source: p}))
+                }
+            }
+        });
     },
 
     methods: {

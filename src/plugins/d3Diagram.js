@@ -25,7 +25,7 @@ export default class D3Diagram {
         this.selectD            = null;
 
         /** 注册事件 */
-        this.dispatcher = this.$d3.dispatch('rect_click', 'rect_move');
+        this.dispatcher = this.$d3.dispatch('onload', 'rect_click', 'rect_move');
     }
 
     /**
@@ -70,6 +70,8 @@ export default class D3Diagram {
                     func.call(this);
                 });
             });
+
+        this.dispatcher.call('onload', this, true);
     }
 
     /**
@@ -282,20 +284,21 @@ export default class D3Diagram {
          */
         function drawIcon (d) {
             if (d.type == 'dataset') { // 绘制dataset元素icon
-                if (!d.source) { // 绘制dataset默认icon
-                    _this.instance
-                        .append('use')
-                        .attr('bind-uid', d.uid)
-                        .attr('x', d.x + (d.width - 50) / 2)
-                        .attr('y', d.y + (d.height - 50) / 2)
-                        .attr('height', 50)
-                        .attr('width', 50)
-                        .attr('fill', '#cccccc')
-                        .attr('xlink:href', '#icon-add-dataset')
-                        .classed('icon-dataset', true)
-                        .classed('animated jelly', true)
-                        .attr('style', `transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;-moz-transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;`)
-                }
+                _this.instance
+                    .append('use')
+                    .attr('bind-uid', d.uid)
+                    .attr('x', d.x + (d.width - 50) / 2)
+                    .attr('y', d.y + (d.height - 50) / 2)
+                    .attr('height', 50)
+                    .attr('width', 50)
+                    .attr('fill', '#cccccc')
+                    .attr('xlink:href', d.source ? {
+                        'GD': '#icon-logo-ds-googledrive',
+                        'Upload': '#icon-logo-ds-upload'
+                    }[d.source] : '#icon-add-dataset')
+                    .classed('icon-dataset', true)
+                    .classed('animated jelly', true)
+                    .attr('style', `transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;-moz-transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;`)
             }
             if (d.type == 'operation') {
                 _this.instance
@@ -369,7 +372,7 @@ export default class D3Diagram {
             _this.moveLine(d, _this.$d3.event.x, _this.$d3.event.y);
 
             /** 广播rect元素的拖拽事件 */
-            _this.dispatcher.call('rect_move', {data: d, event: _this.$d3.event});
+            _this.dispatcher.call('rect_move', _this, {data: d, event: _this.$d3.event});
         }
 
         /**
@@ -441,7 +444,7 @@ export default class D3Diagram {
                 }
 
                 // 点击元素事件
-                _this.dispatcher.call('rect_click', {data: d, event: _this.$d3.event});
+                _this.dispatcher.call('rect_click', _this, {data: d, event: _this.$d3.event});
             }
         }
 
@@ -971,5 +974,12 @@ export default class D3Diagram {
         });
 
         return result;
+    }
+
+    repaintRect (d) {
+        this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('xlink:href', {
+            'GD': '#icon-logo-ds-googledrive',
+            'Upload': '#icon-logo-ds-upload'
+        }[d.source]);
     }
 }
