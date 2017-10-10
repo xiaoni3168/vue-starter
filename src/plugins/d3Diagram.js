@@ -384,9 +384,10 @@ export default class D3Diagram {
             /** 模拟rect元素上的click事件 */
             if (_this.$d3.event.sourceEvent.timeStamp - vTime < 200) {
                 /** 点击之前初始化点击 */
-                if (_this.selectD) {
+                if (_this.selectD && _this.selectD.uid != d.uid) {
                     _this.$d3.select(`use[bind-uid="${_this.selectD.uid}"].icon-close`).style('display', 'none');
                     _this.$d3.select(`rect[data-uid="${_this.selectD.uid}"]`).classed('focused', false);
+                    _this.instance.on('keydown', null);
                 }
 
                 /** 展示或隐藏rect元素上的关闭按钮 */
@@ -408,7 +409,6 @@ export default class D3Diagram {
 
                     _this.instance.node().focus();
                     _this.instance.on('keydown', function () {
-                        console.log(_this.$d3.event.keyCode)
                         let rect = _this.$d3.select(`rect[data-uid="${d.uid}"]`),
                             icon = _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`),
                             output = _this.$d3.select(`circle[bind-uid="${d.uid}"]`),
@@ -890,6 +890,13 @@ export default class D3Diagram {
             dy          = 0;
 
         this.onMouseDownFuncs.push(function () {
+            /** 初始化选中的元素，并去掉选中状态 */
+            if (_this.selectD && _this.$d3.event.target.nodeName != 'use') { // 当点击的不是删除按钮时才初始化
+                _this.$d3.select(`use[bind-uid="${_this.selectD.uid}"].icon-close`).style('display', 'none');
+                _this.$d3.select(`rect[data-uid="${_this.selectD.uid}"]`).classed('focused', false);
+                _this.instance.on('keydown', null);
+            }
+
             _this.$d3.select(this).style('cursor', '-webkit-grabbing');
             dragging = true;
 
