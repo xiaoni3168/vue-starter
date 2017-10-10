@@ -18,10 +18,11 @@ export default class D3Diagram {
         this.connecting         = false;    // 当前画布上是否有连线事件
         this.connector          = null;     // 当前画布上正在连接的线 (type: d3.selector)
 
+        /** 画布绝对位置偏移量 */
         this.containerLeft      = 0;
         this.containerTop       = 0;
 
-
+        /** 注册事件 */
         this.dispatcher = this.$d3.dispatch('rect_click', 'rect_move');
     }
 
@@ -34,6 +35,7 @@ export default class D3Diagram {
     init ({ dom, config = {} }) {
         const _this = this;
 
+        /** 初始化获取画布的绝对位置偏移量 */
         this.containerLeft = this.$d3.select(dom).node().offsetLeft;
 
         this.containerResize(dom);
@@ -41,6 +43,7 @@ export default class D3Diagram {
         /** 初始化工具实例 */
         this.instance = this.$d3.select(dom).append('svg').style('transform', `translate(${-this.containerLeft}px, 0px)`);
 
+        /** 画布的拖拽 */
         this.dragCanvas();
 
         /** 设置画布 */
@@ -111,8 +114,6 @@ export default class D3Diagram {
         let vTime   = 0,    // 计算元素 mousedown 和 mouseup 事件的timeStamp差值，用来模拟 click 事件(vTime < 300ms)
             rectData;       // 画布上所有rect元素数据
 
-        // this.correctPosition(configs);
-
         rectData = this.instance
             .selectAll('rect')
             .data(configs)
@@ -131,6 +132,7 @@ export default class D3Diagram {
             .attr('data-uid',       d => d.uid)
             /** rect元素连接点绘制 */
             .each(drawHook)
+            /** rect元素icon绘制 */
             .each(drawIcon)
             /** rect元素上 mouseup 事件(用于：连线) */
             .on('mouseup', rectMouseUp)
@@ -271,9 +273,14 @@ export default class D3Diagram {
             }
         }
 
+        /**
+         * 绘制rect元素icon
+         * @param  {[type]} d [description]
+         * @return {[type]}   [description]
+         */
         function drawIcon (d) {
-            if (d.type == 'dataset') {
-                if (!d.source) {
+            if (d.type == 'dataset') { // 绘制dataset元素icon
+                if (!d.source) { // 绘制dataset默认icon
                     _this.instance
                         .append('use')
                         .attr('bind-uid', d.uid)
@@ -311,9 +318,9 @@ export default class D3Diagram {
             /** 提升rect元素上input在画布上的层级 */
             _this.$d3.select(`path[bind-uid="${d.uid}"]`).raise();
 
-            /** 提升rect元素上的关闭按钮在画布上的层级 */
+            /** 提升rect元素上的关闭按钮以及icon在画布上的层级 */
             _this.$d3.selectAll(`use[bind-uid="${d.uid}"]`).raise();
-
+            /** 去掉icon的入场动画效果，防止在拖动结束时有动画效果 */
             _this.$d3.selectAll(`use[bind-uid="${d.uid}"]`).classed('animated jelly', false);
 
             vTime = _this.$d3.event.sourceEvent.timeStamp;
@@ -335,12 +342,13 @@ export default class D3Diagram {
 
             /** rect元素的关闭按钮在画布上拖拽重绘 */
             _this.$d3.select(`use[bind-uid="${d.uid}"].icon-close`).attr('x', _this.$d3.event.x + d.width - 12).attr('y', _this.$d3.event.y + 4);
-
+            /** rect元素的icon在画布上拖拽重绘 */
             _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('x', _this.$d3.event.x + (d.width - 50) / 2).attr('y', _this.$d3.event.y + (d.height - 50) / 2);
 
             // 线的拖动
             _this.moveLine(d, _this.$d3.event.x, _this.$d3.event.y);
 
+            /** 广播rect元素的拖拽事件 */
             _this.dispatcher.call('rect_move', {data: d, event: _this.$d3.event});
         }
 
@@ -460,11 +468,14 @@ export default class D3Diagram {
         return this.instance;
     }
 
+    /**
+     * 连线绘制
+     * @param  {Array}  [configs=[]] [description]
+     * @return {[type]}              [description]
+     */
     line (configs = []) {
         const _this = this;
         let lineData;
-
-        this.correctPosition(configs);
 
         lineData = this.instance
             .selectAll('g.connected')
@@ -515,6 +526,12 @@ export default class D3Diagram {
             });
     }
 
+    /**
+     * 绘制连线或拖动连线时，计算连线的绘制方式
+     * @param  {[type]} p1 [description]
+     * @param  {[type]} p2 [description]
+     * @return {[type]}    [description]
+     */
     calculateLine ({ p1, p2 }) {
         const MAX_ARC_DIAMETER = 20;
 
@@ -626,14 +643,35 @@ export default class D3Diagram {
             p2.y
         );
 
+        /**
+         * 直线绘制规则生成
+         * @param  {[type]} x [description]
+         * @param  {[type]} y [description]
+         * @return {[type]}   [description]
+         */
         function line (x, y) {
             return `L ${x} ${y} `;
         }
 
+        /**
+         * 圆弧绘制规则生成
+         * @param  {[type]} x [description]
+         * @param  {[type]} y [description]
+         * @param  {[type]} d [description]
+         * @return {[type]}   [description]
+         */
         function arc (x, y, d) {
             return `A 10 10 0 0 ${d} ${x} ${y} `;
         }
 
+        /**
+         * 曲线（贝塞尔）绘制规则生成
+         * @param  {[type]} x      [description]
+         * @param  {[type]} y      [description]
+         * @param  {[type]} d      [description]
+         * @param  {[type]} forceC [description]
+         * @return {[type]}        [description]
+         */
         function curve (x, y, d, forceC) {
             let controlPoint = '';
             if (Math.abs(calculateYDistance()) == MAX_ARC_DIAMETER && !forceC) {
@@ -645,10 +683,22 @@ export default class D3Diagram {
             return `${Math.abs(calculateYDistance()) == MAX_ARC_DIAMETER && !forceC ? 'Q' : 'C'} ${controlPoint} ${x} ${y} `;
         }
 
+        /**
+         * 曲线（贝塞尔）绘制规则生成 -- 根据x轴位置判断绘制
+         * @param  {[type]} x1 [description]
+         * @param  {[type]} y1 [description]
+         * @param  {[type]} x2 [description]
+         * @param  {[type]} y2 [description]
+         * @return {[type]}    [description]
+         */
         function curveX (x1, y1, x2, y2) {
             return `C ${x1} ${(y1 - y2) / 2 + y2} ${x2} ${(y1 - y2) / 2 + y2} ${x2} ${y2}`;
         }
 
+        /**
+         * 计算连线起始点和结束点的y轴相对位置信息
+         * @return {[type]} [description]
+         */
         function calculateYDistance () {
             if (Math.abs(p2.y - p1.y) > MAX_ARC_DIAMETER) {
                 return p2.y - p1.y > 0 ? MAX_ARC_DIAMETER : -MAX_ARC_DIAMETER;
@@ -657,6 +707,10 @@ export default class D3Diagram {
             }
         }
 
+        /**
+         * 计算连线起始点和结束点的x轴相对位置信息
+         * @return {[type]} [description]
+         */
         function calculateXDistance () {
             return p2.x - p1.x;
         }
@@ -664,10 +718,21 @@ export default class D3Diagram {
         return connector;
     }
 
+    /**
+     * 绑定事件
+     * @param  {[type]}   type [description]
+     * @param  {Function} cb   [description]
+     * @return {[type]}        [description]
+     */
     on (type, cb) {
         this.dispatcher.on(type, cb);
     }
 
+    /**
+     * 容器大小修改事件监听
+     * @param  {[type]} dom [description]
+     * @return {[type]}     [description]
+     */
     containerResize (dom) {
         const _this = this;
         window.document.body.onresize = function () {
@@ -677,12 +742,13 @@ export default class D3Diagram {
         }
     }
 
-    correctPosition (configs) {
-        configs.forEach(config => {
-            config.x = config.x - this.containerLeft;
-        });
-    }
-
+    /**
+     * 连线的移动
+     * @param  {[type]} d  [description]
+     * @param  {[type]} mx [description]
+     * @param  {[type]} my [description]
+     * @return {[type]}    [description]
+     */
     moveLine (d, mx, my) {
         const _this = this;
 
@@ -748,6 +814,10 @@ export default class D3Diagram {
         });
     }
 
+    /**
+     * 画布的拖拽
+     * @return {[type]} [description]
+     */
     dragCanvas () {
         const _this = this;
         let dragging    = false,
@@ -765,9 +835,6 @@ export default class D3Diagram {
         this.onMouseMoveFunc.push(function () {
             if (dragging) {
                 let selector = _this.$d3.select(this);
-
-                // selector.attr('width', +selector.attr('width') + _this.$d3.event.x - dx);
-                // selector.attr('height', +selector.attr('height') + _this.$d3.event.y - dy);
 
                 selector.selectAll('rect')
                     .attr('x', function (d) {
@@ -813,6 +880,10 @@ export default class D3Diagram {
         });
     }
 
+    /**
+     * 保存
+     * @return {[type]} [description]
+     */
     save () {
         let result = {
             rect: [],
