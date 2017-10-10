@@ -234,6 +234,9 @@ export default {
             fill: #ff4747;
         }
     }
+    .icon-dataset {
+        pointer-events: none;
+    }
     .diagram-content-canvas {
         .diagram-content-toolbox {
             position: absolute;

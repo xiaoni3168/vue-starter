@@ -275,7 +275,17 @@ export default class D3Diagram {
             if (d.type == 'dataset') {
                 if (!d.source) {
                     _this.instance
-                        .append('use');
+                        .append('use')
+                        .attr('bind-uid', d.uid)
+                        .attr('x', d.x + (d.width - 50) / 2)
+                        .attr('y', d.y + (d.height - 50) / 2)
+                        .attr('height', 50)
+                        .attr('width', 50)
+                        .attr('fill', '#cccccc')
+                        .attr('xlink:href', '#icon-add-dataset')
+                        .classed('icon-dataset', true)
+                        .classed('animated jelly', true)
+                        .attr('style', `transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;-moz-transform-origin: ${d.x + d.width / 2}px ${d.y + d.height / 2}px;`)
                 }
             }
         }
@@ -302,7 +312,9 @@ export default class D3Diagram {
             _this.$d3.select(`path[bind-uid="${d.uid}"]`).raise();
 
             /** 提升rect元素上的关闭按钮在画布上的层级 */
-            _this.$d3.select(`use[bind-uid="${d.uid}"]`).raise();
+            _this.$d3.selectAll(`use[bind-uid="${d.uid}"]`).raise();
+
+            _this.$d3.selectAll(`use[bind-uid="${d.uid}"]`).classed('animated jelly', false);
 
             vTime = _this.$d3.event.sourceEvent.timeStamp;
         }
@@ -322,7 +334,9 @@ export default class D3Diagram {
             _this.$d3.select(`path[bind-uid="${d.uid}"]`).attr('d', `M ${_this.$d3.event.x - 4} ${_this.$d3.event.y + d.height / 2 - 6} L ${_this.$d3.event.x + Math.sqrt(12 * 12 - 6 * 6) - 4} ${_this.$d3.event.y + d.height / 2} L ${_this.$d3.event.x - 4} ${_this.$d3.event.y + d.height / 2 + 6} z`);
 
             /** rect元素的关闭按钮在画布上拖拽重绘 */
-            _this.$d3.select(`use[bind-uid="${d.uid}"]`).attr('x', _this.$d3.event.x + d.width - 12).attr('y', _this.$d3.event.y + 4);
+            _this.$d3.select(`use[bind-uid="${d.uid}"].icon-close`).attr('x', _this.$d3.event.x + d.width - 12).attr('y', _this.$d3.event.y + 4);
+
+            _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('x', _this.$d3.event.x + (d.width - 50) / 2).attr('y', _this.$d3.event.y + (d.height - 50) / 2);
 
             // 线的拖动
             _this.moveLine(d, _this.$d3.event.x, _this.$d3.event.y);
@@ -342,7 +356,7 @@ export default class D3Diagram {
             /** 模拟rect元素上的click事件 */
             if (_this.$d3.event.sourceEvent.timeStamp - vTime < 200) {
                 /** 展示或隐藏rect元素上的关闭按钮 */
-                let close = _this.$d3.select(`use[bind-uid="${_this.$d3.select(this).attr('data-uid')}"]`);
+                let close = _this.$d3.select(`use[bind-uid="${_this.$d3.select(this).attr('data-uid')}"].icon-close`);
                 if (close.node().style.display === 'block') {
                     close.style('display', 'none');
 
@@ -762,7 +776,8 @@ export default class D3Diagram {
 
                         _this.$d3.select(`circle[bind-uid="${d.uid}"]`).attr('cx', mx + d.width);
                         _this.$d3.select(`path[bind-uid="${d.uid}"]`).attr('d', `M ${mx - 4} ${my + d.height / 2 - 6} L ${mx + Math.sqrt(12 * 12 - 6 * 6) - 4} ${my + d.height / 2} L ${mx - 4} ${my + d.height / 2 + 6} z`);
-                        _this.$d3.select(`use[bind-uid="${d.uid}"]`).attr('x', mx + d.width - 12);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"].icon-close`).attr('x', mx + d.width - 12);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('x', mx + (d.width - 50) / 2);
 
                         _this.moveLine(d, mx, my);
 
@@ -770,7 +785,8 @@ export default class D3Diagram {
                     })
                     .attr('y', function (d) {
                         _this.$d3.select(`circle[bind-uid="${d.uid}"]`).attr('cy', d.y + _this.$d3.event.y - dy + d.height / 2);
-                        _this.$d3.select(`use[bind-uid="${d.uid}"]`).attr('y', d.y + _this.$d3.event.y - dy + 4);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"].icon-close`).attr('y', d.y + _this.$d3.event.y - dy + 4);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('y', d.y + _this.$d3.event.y - dy + (d.height - 50) / 2)
 
                         return d.y + _this.$d3.event.y - dy;
                     });
