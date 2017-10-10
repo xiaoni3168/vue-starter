@@ -812,4 +812,21 @@ export default class D3Diagram {
             }
         });
     }
+
+    save () {
+        let result = {
+            rect: [],
+            line: []
+        };
+
+        this.$d3.selectAll('rect[data-uid]').each(d => {
+            result.rect.push(d);
+        });
+
+        this.$d3.selectAll('g[in-uid]').each(d => {
+            result.line.push(d);
+        });
+
+        return result;
+    }
 }

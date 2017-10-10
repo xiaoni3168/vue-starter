@@ -18,6 +18,7 @@
                 </div>
             </div>
         </div>
+        <button type="button" name="button" @click="save()">Save</button>
     </div>
 </template>
 <script type="text/javascript">
@@ -63,6 +64,8 @@ export default {
         /** 初始化toolbox（拖拽） */
         this.initToolboxHeader();
 
+        window.D3Diagram = this.D3Diagram;
+
         this.D3Diagram.on('rect_click', function (d) {
             console.log(this);
         })
@@ -87,6 +90,10 @@ export default {
                 "fill": '#f5f5f5',
                 "type": 'dataset'
             }));
+        },
+
+        save: function () {
+            console.log(JSON.stringify(this.D3Diagram.save()))
         },
 
         addRect: function (rects = []) {
