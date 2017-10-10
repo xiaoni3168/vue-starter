@@ -131,6 +131,7 @@ export default class D3Diagram {
             .attr('data-uid',       d => d.uid)
             /** rect元素连接点绘制 */
             .each(drawHook)
+            .each(drawIcon)
             /** rect元素上 mouseup 事件(用于：连线) */
             .on('mouseup', rectMouseUp)
             .on('mouseover', rectMouseOver)
@@ -166,6 +167,8 @@ export default class D3Diagram {
                 .classed('animated jelly', true)
                 /** 连线开始 */
                 .on('mousedown', function () {
+                    _this.$d3.event.stopPropagation();
+
                     _this.connecting = true;
                     /** 创建鼠标连线 */
                     _this.connector = _this.instance.append('g').attr('input-uid', d.uid);
@@ -268,6 +271,15 @@ export default class D3Diagram {
             }
         }
 
+        function drawIcon (d) {
+            if (d.type == 'dataset') {
+                if (!d.source) {
+                    _this.instance
+                        .append('use');
+                }
+            }
+        }
+
         /**
          * 元素拖拽 - start
          * @param  {[type]} d [description]
@@ -313,68 +325,9 @@ export default class D3Diagram {
             _this.$d3.select(`use[bind-uid="${d.uid}"]`).attr('x', _this.$d3.event.x + d.width - 12).attr('y', _this.$d3.event.y + 4);
 
             // 线的拖动
-            _this.$d3.selectAll(`g[in-uid="${d.uid}"]`).each(function () {
-                _this.$d3
-                    .select(this)
-                    .select('use')
-                    .attr('x', function (_d) {
-                        return (_d.x2 - (_d.x1 = _this.$d3.event.x + d.width)) / 2 + (_d.x1 = _this.$d3.event.x + d.width) - 8;
-                    })
-                    .attr('y', function (_d) {
-                        return (_d.y2 - (_d.y1 = _this.$d3.event.y + d.height / 2)) / 2 + (_d.y1 = _this.$d3.event.y + d.height / 2);
-                    })
-                _this.$d3
-                    .select(this)
-                    .selectAll('path')
-                    .each(function () {
-                        _this.$d3
-                            .select(this)
-                            .attr('d', function (_d) {
-                                return _this.calculateLine({
-                                    p1: {
-                                        x: _d.x1 = _this.$d3.event.x + d.width,
-                                        y: _d.y1 = _this.$d3.event.y + d.height / 2
-                                    },
-                                    p2: {
-                                        x: _d.x2,
-                                        y: _d.y2
-                                    }
-                                });
-                            });
-                    });
-            });
-            _this.$d3.selectAll(`g[out-uid="${d.uid}"]`).each(function () {
-                _this.$d3
-                    .select(this)
-                    .select('use')
-                    .attr('x', function (_d) {
-                        return ((_d.x2 = _this.$d3.event.x) - _d.x1) / 2 + _d.x1 - 8;
-                    })
-                    .attr('y', function (_d) {
-                        return ((_d.y2 = _this.$d3.event.y + d.height / 2) - _d.y1) / 2 + _d.y1;
-                    })
-                _this.$d3
-                    .select(this)
-                    .selectAll('path')
-                    .each(function () {
-                        _this.$d3
-                            .select(this)
-                            .attr('d', function (_d) {
-                                return _this.calculateLine({
-                                    p1: {
-                                        x: _d.x1,
-                                        y: _d.y1
-                                    },
-                                    p2: {
-                                        x: _d.x2 = _this.$d3.event.x,
-                                        y: _d.y2 = _this.$d3.event.y + d.height / 2
-                                    }
-                                });
-                            });
-                    });
-            });
+            _this.moveLine(d, _this.$d3.event.x, _this.$d3.event.y);
 
-            _this.dispatcher.call('rect_move', d);
+            _this.dispatcher.call('rect_move', {data: d, event: _this.$d3.event});
         }
 
         /**
@@ -401,7 +354,7 @@ export default class D3Diagram {
                 }
 
                 // 点击元素事件
-                _this.dispatcher.call('rect_click', d);
+                _this.dispatcher.call('rect_click', {data: d, event: _this.$d3.event});
             }
         }
 
@@ -716,6 +669,71 @@ export default class D3Diagram {
         });
     }
 
+    moveLine (d, mx, my) {
+        const _this = this;
+
+        this.$d3.selectAll(`g[in-uid="${d.uid}"]`).each(function () {
+            _this.$d3
+                .select(this)
+                .select('use')
+                .attr('x', function (_d) {
+                    return (_d.x2 - (_d.x1 = mx + d.width)) / 2 + (_d.x1 = mx + d.width) - 8;
+                })
+                .attr('y', function (_d) {
+                    return (_d.y2 - (_d.y1 = my + d.height / 2)) / 2 + (_d.y1 = my + d.height / 2);
+                })
+            _this.$d3
+                .select(this)
+                .selectAll('path')
+                .each(function () {
+                    _this.$d3
+                        .select(this)
+                        .attr('d', function (_d) {
+                            return _this.calculateLine({
+                                p1: {
+                                    x: _d.x1 = mx + d.width,
+                                    y: _d.y1 = my + d.height / 2
+                                },
+                                p2: {
+                                    x: _d.x2,
+                                    y: _d.y2
+                                }
+                            });
+                        });
+                });
+        });
+        _this.$d3.selectAll(`g[out-uid="${d.uid}"]`).each(function () {
+            _this.$d3
+                .select(this)
+                .select('use')
+                .attr('x', function (_d) {
+                    return ((_d.x2 = mx) - _d.x1) / 2 + _d.x1 - 8;
+                })
+                .attr('y', function (_d) {
+                    return ((_d.y2 = my + d.height / 2) - _d.y1) / 2 + _d.y1;
+                })
+            _this.$d3
+                .select(this)
+                .selectAll('path')
+                .each(function () {
+                    _this.$d3
+                        .select(this)
+                        .attr('d', function (_d) {
+                            return _this.calculateLine({
+                                p1: {
+                                    x: _d.x1,
+                                    y: _d.y1
+                                },
+                                p2: {
+                                    x: _d.x2 = mx,
+                                    y: _d.y2 = my + d.height / 2
+                                }
+                            });
+                        });
+                });
+        });
+    }
+
     dragCanvas () {
         const _this = this;
         let dragging    = false,
@@ -737,10 +755,25 @@ export default class D3Diagram {
                 // selector.attr('width', +selector.attr('width') + _this.$d3.event.x - dx);
                 // selector.attr('height', +selector.attr('height') + _this.$d3.event.y - dy);
 
-                selector.selectAll('rect').attr('x', function (d) {
-                    _this.$d3.select(`circle[bind-uid="${d.uid}"]`).attr('cx', d.x + _this.$d3.event.x - dx + d.width);
-                    return d.x + _this.$d3.event.x - dx;
-                });
+                selector.selectAll('rect')
+                    .attr('x', function (d) {
+                        let mx = d.x + _this.$d3.event.x - dx,
+                            my = d.y + _this.$d3.event.y - dy;
+
+                        _this.$d3.select(`circle[bind-uid="${d.uid}"]`).attr('cx', mx + d.width);
+                        _this.$d3.select(`path[bind-uid="${d.uid}"]`).attr('d', `M ${mx - 4} ${my + d.height / 2 - 6} L ${mx + Math.sqrt(12 * 12 - 6 * 6) - 4} ${my + d.height / 2} L ${mx - 4} ${my + d.height / 2 + 6} z`);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"]`).attr('x', mx + d.width - 12);
+
+                        _this.moveLine(d, mx, my);
+
+                        return mx;
+                    })
+                    .attr('y', function (d) {
+                        _this.$d3.select(`circle[bind-uid="${d.uid}"]`).attr('cy', d.y + _this.$d3.event.y - dy + d.height / 2);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"]`).attr('y', d.y + _this.$d3.event.y - dy + 4);
+
+                        return d.y + _this.$d3.event.y - dy;
+                    });
 
             }
         });
@@ -751,9 +784,13 @@ export default class D3Diagram {
 
                 let selector = _this.$d3.select(this);
 
-                selector.selectAll('rect').attr('x', function (d) {
-                    return d.x = d.x + _this.$d3.event.x - dx;
-                });
+                selector.selectAll('rect')
+                    .attr('x', function (d) {
+                        return d.x = d.x + _this.$d3.event.x - dx;
+                    })
+                    .attr('y', function (d) {
+                        return d.y = d.y + _this.$d3.event.y - dy;
+                    });
 
                 dragging = false;
             }

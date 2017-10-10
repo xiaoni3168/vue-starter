@@ -39,7 +39,13 @@ export default {
                     id:   2,
                     name: 'Join',
                     type: 'operation',
-                    icon: 'join'
+                    icon: '#icon-duplicate'
+                },
+                {
+                    id:   3,
+                    name: 'AppendRow',
+                    type: 'operation',
+                    icon: '#icon-nav'
                 }
             ]
         }
@@ -51,7 +57,7 @@ export default {
             dom: '#canvas',
             config: {
                 "height": 600,
-                "width": 1200
+                "width": '100%'
             }
         });
         /** 初始化toolbox（拖拽） */
@@ -86,7 +92,6 @@ export default {
         addRect: function (rects = []) {
             let arr = [];
             this.D3Diagram.getInstance().selectAll('rect').each(r => {
-                console.log(r);
                 arr.push(r);
             });
 
@@ -168,7 +173,7 @@ export default {
 
     &-canvas {
         height: 500px;
-        width: 800px;
+        width: calc(100% - 40px);
         margin: auto;
         overflow: hidden;
         position: relative;
@@ -266,7 +271,7 @@ export default {
                             height: 40px;
                             width: 40px;
                             background-color: transparent;
-                            fill: #cccccc;
+                            fill: #999999;
                         }
                     }
                     .element-label {
