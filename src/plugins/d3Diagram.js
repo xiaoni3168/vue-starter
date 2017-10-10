@@ -22,6 +22,8 @@ export default class D3Diagram {
         this.containerLeft      = 0;
         this.containerTop       = 0;
 
+        this.selectD            = null;
+
         /** 注册事件 */
         this.dispatcher = this.$d3.dispatch('rect_click', 'rect_move');
     }
@@ -41,7 +43,7 @@ export default class D3Diagram {
         this.containerResize(dom);
 
         /** 初始化工具实例 */
-        this.instance = this.$d3.select(dom).append('svg').style('transform', `translate(${-this.containerLeft}px, 0px)`);
+        this.instance = this.$d3.select(dom).append('svg').attr('tabindex', -1).style('transform', `translate(${-this.containerLeft}px, 0px)`);
 
         /** 画布的拖拽 */
         this.dragCanvas();
@@ -381,16 +383,61 @@ export default class D3Diagram {
 
             /** 模拟rect元素上的click事件 */
             if (_this.$d3.event.sourceEvent.timeStamp - vTime < 200) {
+                /** 点击之前初始化点击 */
+                if (_this.selectD) {
+                    _this.$d3.select(`use[bind-uid="${_this.selectD.uid}"].icon-close`).style('display', 'none');
+                    _this.$d3.select(`rect[data-uid="${_this.selectD.uid}"]`).classed('focused', false);
+                }
+
                 /** 展示或隐藏rect元素上的关闭按钮 */
                 let close = _this.$d3.select(`use[bind-uid="${_this.$d3.select(this).attr('data-uid')}"].icon-close`);
                 if (close.node().style.display === 'block') {
+                    _this.selectD = null;
+
                     close.style('display', 'none');
 
                     _this.$d3.select(this).classed('focused', false);
+
+                    _this.instance.on('keydown', null);
                 } else {
+                    _this.selectD = d;
+
                     close.style('display', 'block');
 
                     _this.$d3.select(this).classed('focused', true);
+
+                    _this.instance.node().focus();
+                    _this.instance.on('keydown', function () {
+                        console.log(_this.$d3.event.keyCode)
+                        let rect = _this.$d3.select(`rect[data-uid="${d.uid}"]`),
+                            icon = _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`),
+                            output = _this.$d3.select(`circle[bind-uid="${d.uid}"]`),
+                            input = _this.$d3.select(`path[bind-uid="${d.uid}"]`),
+                            close = _this.$d3.select(`use[bind-uid="${d.uid}"].icon-close`);
+                        switch (_this.$d3.event.keyCode) {
+                            case 37:
+                                rect.attr('x', d.x = d.x % 5 == 0 ? d.x - 5 : d.x - d.x % 5 - 5);
+                                break;
+                            case 38:
+                                rect.attr('y', d.y = d.y % 5 == 0 ? d.y - 5 : d.y - d.y % 5 - 5);
+                                break;
+                            case 39:
+                                rect.attr('x', d.x = d.x % 5 == 0 ? d.x + 5 : d.x - d.x % 5 + 5);
+                                break;
+                            case 40:
+                                rect.attr('y', d.y = d.y % 5 == 0 ? d.y + 5 : d.y - d.y % 5 + 5);
+                                break;
+                            default:
+                                break;
+                        }
+
+                        close.attr('x', d.x + d.width - 12).attr('y', d.y + 4);
+                        output.attr('cx', d.x + d.width).attr('cy', d.y + d.height / 2);
+                        icon.attr('x', d.x + (d.width - 50) / 2).attr('y', d.y + (d.width - 50) / 2);
+                        input.attr('d', `M ${d.x - 4} ${d.y + d.height / 2 - 6} L ${d.x + Math.sqrt(12 * 12 - 6 * 6) - 4} ${d.y + d.height / 2} L ${d.x - 4} ${d.y + d.height / 2 + 6} z`);
+
+                        _this.moveLine(d, d.x, d.y);
+                    });
                 }
 
                 // 点击元素事件
