@@ -254,7 +254,7 @@ export default class D3Diagram {
             function drawLineMove () {
                 if (_this.connecting) {
                     _this.connector.select('path').attr('d', function (_d) {
-                        return `M ${_d.x1} ${_d.y1} L ${_d.x2 = _this.$d3.event.x - 4} ${_d.y2 = _this.$d3.event.y}`;
+                        return `M ${_d.x1} ${_d.y1} L ${_d.x2 = _this.getCoords(_this.$d3.event, -4).x} ${_d.y2 = _this.getCoords(_this.$d3.event).y}`;
                         // return _this.calculateLine({
                         //     p1: {
                         //         x: _d.x1,
@@ -301,8 +301,22 @@ export default class D3Diagram {
                     .attr('width', 50)
                     .attr('fill', '#cccccc')
                     .attr('xlink:href', d.source ? {
-                        'GD': '#icon-logo-ds-googledrive',
-                        'Upload': '#icon-logo-ds-upload'
+                        'googledrive': '#icon-logo-ds-googledrive',
+                        'excel': '#icon-logo-ds-upload',
+                        'mailchimp': '#icon-logo-ds-mailchimp',
+                        'mysql': '#icon-logo-ds-mysql',
+                        'oracle': '#icon-logo-ds-oracle',
+                        'paypal': '#icon-logo-ds-paypal',
+                        'postgre': '#icon-logo-ds-postgre',
+                        'ptapp': '#icon-logo-ds-ptapp',
+                        'redshift': '#icon-logo-ds-',
+                        's3': '#icon-logo-ds-s3',
+                        'salesforce': '#icon-logo-ds-salesforce',
+                        'sqlserver': '#icon-logo-ds-sqlserver',
+                        'stripe': '#icon-logo-ds-stripe',
+                        'googleadsense': '#icon-logo-ds-googleadsense',
+                        'googleadwords': '#icon-logo-ds-googleadwords',
+                        'googleanalysis': '#icon-logo-ds-googleanalysis'
                     }[d.source] : '#icon-add-dataset')
                     .classed('icon-dataset', true)
                     .classed('animated jelly', true)
@@ -528,7 +542,7 @@ export default class D3Diagram {
                             y1: _d.y1,
                             x2: d.x - 5,
                             y2: d.y + d.height / 2,
-                            strokeDasharray: (dataset && dataset.source) ? '0,0' : '3,5',
+                            strokeDasharray: (dataset && dataset.source) ? 'none' : '3,5',
                             inUID: _this.connector.attr('input-uid'),   // 连线 start 连接的rect元素uid
                             outUID: d.uid                               // 连线 end 连接的rect元素uid
                         }
@@ -1021,26 +1035,55 @@ export default class D3Diagram {
     }
 
     setViewbox (dom, config) {
-        this.instance.attr('viewBox', `0 0 ${+config.width.split('%')[0] / 100 * this.$d3.select(dom).node().offsetWidth * this.viewPercent} ${config.height * this.viewPercent}`);
+        let offsetWidth = +config.width.split('%')[0] / 100 * this.$d3.select(dom).node().offsetWidth;
+        let width = offsetWidth * this.viewPercent;
+        let height = config.height * this.viewPercent;
+        this.instance.attr('viewBox', `${(offsetWidth - width) / 2} ${(config.height - height) / 2} ${width} ${height}`);
     }
 
     repaintRect (d) {
         if (d.source) {
             this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('xlink:href', {
-                'GD': '#icon-logo-ds-googledrive',
-                'Upload': '#icon-logo-ds-upload'
+                'googledrive': '#icon-logo-ds-googledrive',
+                'excel': '#icon-logo-ds-upload',
+                'mailchimp': '#icon-logo-ds-mailchimp',
+                'mysql': '#icon-logo-ds-mysql',
+                'oracle': '#icon-logo-ds-oracle',
+                'paypal': '#icon-logo-ds-paypal',
+                'postgre': '#icon-logo-ds-postgre',
+                'ptapp': '#icon-logo-ds-ptapp',
+                'redshift': '#icon-logo-ds-',
+                's3': '#icon-logo-ds-s3',
+                'salesforce': '#icon-logo-ds-salesforce',
+                'sqlserver': '#icon-logo-ds-sqlserver',
+                'stripe': '#icon-logo-ds-stripe',
+                'googleadsense': '#icon-logo-ds-googleadsense',
+                'googleadwords': '#icon-logo-ds-googleadwords',
+                'googleanalysis': '#icon-logo-ds-googleanalysis'
             }[d.source]);
 
             this.$d3
                 .select(`g[in-uid="${d.uid}"]`)
                 .select(`path[data-type="connector"]`)
                 .attr('stroke-dasharray', function (_d) {
-                    return _d.strokeDasharray = '0,0';
+                    return _d.strokeDasharray = 'none';
                 });
         }
     }
 
     deleteLine (d) {
         this.$d3.select(`g[in-uid="${d.inUID}"]`).remove();
+    }
+
+    getCoords (event, fix) {
+        let scale   = this.viewPercent,
+            viewBox = this.instance.attr('viewBox').split(/\s+/),
+            x_trans = parseInt(viewBox[0]),
+            y_trans = parseInt(viewBox[1]);
+
+        return {
+            x: +((event.x + (fix ? fix : 0)) * scale + x_trans).toFixed(1),
+            y: +((event.y + (fix ? fix : 0)) * scale + y_trans).toFixed(1)
+        }
     }
 }

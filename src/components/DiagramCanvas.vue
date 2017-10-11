@@ -1,4 +1,4 @@
-<template>
+none<template>
     <div class="diagram-content">
         <div class="diagram-content-canvas" id="canvas">
             <div class="diagram-content-toolbox">
@@ -30,7 +30,7 @@ export default {
         return {
             container: null,
 
-            initialData:{"rect":[{"uid":"6b44fbb3-7573-47ee-bd0c-a0ef73e92e6e","x":355,"y":330,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset"},{"uid":"3fccd53e-34bf-4835-d706-d85bc260f591","x":720,"y":240,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"4a9036e7-cef8-43ed-9e16-589b8d5067c4","x":355,"y":145,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"GD"}],"line":[{"x1":435,"y1":185,"x2":720,"y2":280,"strokeDasharray":"0,0","inUID":"4a9036e7-cef8-43ed-9e16-589b8d5067c4","outUID":"3fccd53e-34bf-4835-d706-d85bc260f591"},{"x1":435,"y1":370,"x2":720,"y2":280,"strokeDasharray":"3,5","inUID":"6b44fbb3-7573-47ee-bd0c-a0ef73e92e6e","outUID":"3fccd53e-34bf-4835-d706-d85bc260f591"}]},
+            initialData:{"rect":[{"uid":"6b44fbb3-7573-47ee-bd0c-a0ef73e92e6e","x":218,"y":105,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"postgre"},{"uid":"4a9036e7-cef8-43ed-9e16-589b8d5067c4","x":218,"y":-6.600000381469727,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"googleanalysis"},{"uid":"3fccd53e-34bf-4835-d706-d85bc260f591","x":488,"y":50,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"fd7b2063-5ee5-4448-e41e-b93b4440a9a3","x":488,"y":173.40000915527344,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"excel"},{"uid":"a4c83a34-2fe1-4611-b671-ef8214f32dd7","x":749,"y":110,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"f253b1e0-bc3b-48d1-fc7e-f33ea2dbc184","x":217,"y":235.7999725341797,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"mailchimp"},{"uid":"3964b2ee-8d77-43cf-80f5-cf02bab37978","x":217,"y":348,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"googledrive"},{"uid":"0f584ccb-46db-48e3-cae5-08edd5c16fc8","x":487,"y":293,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"AppendRow"},{"uid":"d7e56c34-e68c-48d9-eeb4-3f0e00b1fc1d","x":752,"y":293,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"de224007-4486-42b4-af4c-bafb6f6fe305","x":487,"y":418,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"s3"},{"uid":"7920199e-ef99-4a90-e947-92005d7ca4f2","x":1023,"y":199,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"6e6d8a65-dbd8-4208-f804-172314f5a50f","x":1248,"y":199,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"AppendRow"},{"uid":"47d2d14d-87bb-4a0d-b6b7-1525f527082a","x":1023,"y":324,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"mysql"}],"line":[{"x1":298,"y1":33.39999961853027,"x2":488,"y2":90,"strokeDasharray":"none","inUID":"4a9036e7-cef8-43ed-9e16-589b8d5067c4","outUID":"3fccd53e-34bf-4835-d706-d85bc260f591"},{"x1":298,"y1":145,"x2":488,"y2":90,"strokeDasharray":"none","inUID":"6b44fbb3-7573-47ee-bd0c-a0ef73e92e6e","outUID":"3fccd53e-34bf-4835-d706-d85bc260f591"},{"x1":568,"y1":90,"x2":749,"y2":150,"strokeDasharray":"3,5","inUID":"3fccd53e-34bf-4835-d706-d85bc260f591","outUID":"a4c83a34-2fe1-4611-b671-ef8214f32dd7"},{"x1":568,"y1":213.40000915527344,"x2":749,"y2":150,"strokeDasharray":"none","inUID":"fd7b2063-5ee5-4448-e41e-b93b4440a9a3","outUID":"a4c83a34-2fe1-4611-b671-ef8214f32dd7"},{"x1":297,"y1":275.7999725341797,"x2":487,"y2":333,"strokeDasharray":"none","inUID":"f253b1e0-bc3b-48d1-fc7e-f33ea2dbc184","outUID":"0f584ccb-46db-48e3-cae5-08edd5c16fc8"},{"x1":297,"y1":388,"x2":487,"y2":333,"strokeDasharray":"none","inUID":"3964b2ee-8d77-43cf-80f5-cf02bab37978","outUID":"0f584ccb-46db-48e3-cae5-08edd5c16fc8"},{"x1":567,"y1":333,"x2":752,"y2":333,"strokeDasharray":"3,5","inUID":"0f584ccb-46db-48e3-cae5-08edd5c16fc8","outUID":"d7e56c34-e68c-48d9-eeb4-3f0e00b1fc1d"},{"x1":567,"y1":458,"x2":752,"y2":333,"strokeDasharray":"none","inUID":"de224007-4486-42b4-af4c-bafb6f6fe305","outUID":"d7e56c34-e68c-48d9-eeb4-3f0e00b1fc1d"},{"x1":829,"y1":150,"x2":1023,"y2":239,"strokeDasharray":"3,5","inUID":"a4c83a34-2fe1-4611-b671-ef8214f32dd7","outUID":"7920199e-ef99-4a90-e947-92005d7ca4f2"},{"x1":832,"y1":333,"x2":1023,"y2":239,"strokeDasharray":"3,5","inUID":"d7e56c34-e68c-48d9-eeb4-3f0e00b1fc1d","outUID":"7920199e-ef99-4a90-e947-92005d7ca4f2"},{"x1":1103,"y1":239,"x2":1248,"y2":239,"strokeDasharray":"3,5","inUID":"7920199e-ef99-4a90-e947-92005d7ca4f2","outUID":"6e6d8a65-dbd8-4208-f804-172314f5a50f"},{"x1":1103,"y1":364,"x2":1248,"y2":239,"strokeDasharray":"none","inUID":"47d2d14d-87bb-4a0d-b6b7-1525f527082a","outUID":"6e6d8a65-dbd8-4208-f804-172314f5a50f"}]},
 
             toolboxPosition: {
                 x: 1000,
@@ -186,8 +186,8 @@ export default {
                     _this.addRect([
                         {
                             "uid": Utils.uuid(),
-                            "x": _d3.event.x - 40,
-                            "y": _d3.event.y - 40,
+                            "x": _this.D3Diagram.getCoords(_d3.event).x - 40,
+                            "y": _this.D3Diagram.getCoords(_d3.event).y - 40,
                             "width": 80,
                             "height": 80,
                             "rx": 10,
@@ -271,8 +271,9 @@ export default {
             }
             &[data-type="connector_cover"]:hover {
                 & + path {
-                    stroke-dasharray: 0,0;
+                    stroke-dasharray: none;
                     stroke-width: 2;
+                    stroke: #5abeff;
                     & + use {
                         display: block !important;
                     }
@@ -350,6 +351,7 @@ export default {
             border-radius: 3px;
             font-size: 12px;
             box-shadow: 0 -1px 1px 0 rgba(0,0,0,.05), 0 1px 2px 0 rgba(0,0,0,.2);
+            background-color: #ffffff;
             &_increase {
                 width: 28px;
                 border-left: 1px solid #e2e5eb;
