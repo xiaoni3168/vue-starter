@@ -79,6 +79,7 @@ export default class D3Diagram {
                 });
             });
 
+        this.cleanCanvas();
         this.dispatcher.call('onload', this, true);
     }
 
@@ -122,6 +123,8 @@ export default class D3Diagram {
      */
     rect (configs = [], func = {}) {
         const _this = this;
+
+        this.$d3.select('text').remove();
 
         let vTime   = 0,    // 计算元素 mousedown 和 mouseup 事件的timeStamp差值，用来模拟 click 事件(vTime < 300ms)
             rectData;       // 画布上所有rect元素数据
@@ -245,6 +248,10 @@ export default class D3Diagram {
                         _this.$d3.select(this).remove();
                     });
                     _this.$d3.select(`[data-uid="${d.uid}"]`).remove();
+
+                    if (_this.instance.selectAll('*').empty()) {
+                        _this.cleanCanvas();
+                    }
                 });
 
             /**
@@ -309,7 +316,7 @@ export default class D3Diagram {
                         'paypal': '#icon-logo-ds-paypal',
                         'postgre': '#icon-logo-ds-postgre',
                         'ptapp': '#icon-logo-ds-ptapp',
-                        'redshift': '#icon-logo-ds-',
+                        'redshift': '#icon-logo-ds-redshift',
                         's3': '#icon-logo-ds-s3',
                         'salesforce': '#icon-logo-ds-salesforce',
                         'sqlserver': '#icon-logo-ds-sqlserver',
@@ -1052,7 +1059,7 @@ export default class D3Diagram {
                 'paypal': '#icon-logo-ds-paypal',
                 'postgre': '#icon-logo-ds-postgre',
                 'ptapp': '#icon-logo-ds-ptapp',
-                'redshift': '#icon-logo-ds-',
+                'redshift': '#icon-logo-ds-redshift',
                 's3': '#icon-logo-ds-s3',
                 'salesforce': '#icon-logo-ds-salesforce',
                 'sqlserver': '#icon-logo-ds-sqlserver',
@@ -1085,5 +1092,20 @@ export default class D3Diagram {
             x: +((event.x + (fix ? fix : 0)) * scale + x_trans).toFixed(1),
             y: +((event.y + (fix ? fix : 0)) * scale + y_trans).toFixed(1)
         }
+    }
+
+    cleanCanvas () {
+        this.instance.selectAll('*').remove();
+        this.instance
+            .append('text')
+            .attr('x', parseInt(this.instance.attr('viewBox').split(/\s+/)[2]) / 2)
+            .attr('y', parseInt(this.instance.attr('viewBox').split(/\s+/)[3]) / 2 - 50)
+            .attr('font-size', 48)
+            .attr('stroke', '#eeeeee')
+            .attr('fill', '#f0f0f0')
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .style('text-shadow', '3px 3px 4px #eeeeee')
+            .text('Drag element here to start your ETL flow...')
     }
 }

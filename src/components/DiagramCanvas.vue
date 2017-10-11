@@ -20,20 +20,25 @@ none<template>
             </div>
         </div>
         <button type="button" name="button" @click="save()">Save</button>
+        <button type="button" name="button" @click="clean()">Clean</button>
+        <select class="" name="" @change="selectChange($event.target.selectedIndex)">
+            <option v-for="(item, index) in lists" value="index">{{index}}</option>
+        </select>
     </div>
 </template>
 <script type="text/javascript">
 import * as Utils from '../utils';
+import axios from 'axios';
 
 export default {
     data () {
         return {
             container: null,
 
-            initialData:{"rect":[{"uid":"6b44fbb3-7573-47ee-bd0c-a0ef73e92e6e","x":218,"y":105,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"postgre"},{"uid":"4a9036e7-cef8-43ed-9e16-589b8d5067c4","x":218,"y":-6.600000381469727,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"googleanalysis"},{"uid":"3fccd53e-34bf-4835-d706-d85bc260f591","x":488,"y":50,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"fd7b2063-5ee5-4448-e41e-b93b4440a9a3","x":488,"y":173.40000915527344,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"excel"},{"uid":"a4c83a34-2fe1-4611-b671-ef8214f32dd7","x":749,"y":110,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"f253b1e0-bc3b-48d1-fc7e-f33ea2dbc184","x":217,"y":235.7999725341797,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"mailchimp"},{"uid":"3964b2ee-8d77-43cf-80f5-cf02bab37978","x":217,"y":348,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"googledrive"},{"uid":"0f584ccb-46db-48e3-cae5-08edd5c16fc8","x":487,"y":293,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"AppendRow"},{"uid":"d7e56c34-e68c-48d9-eeb4-3f0e00b1fc1d","x":752,"y":293,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"de224007-4486-42b4-af4c-bafb6f6fe305","x":487,"y":418,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"s3"},{"uid":"7920199e-ef99-4a90-e947-92005d7ca4f2","x":1023,"y":199,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"6e6d8a65-dbd8-4208-f804-172314f5a50f","x":1248,"y":199,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"AppendRow"},{"uid":"47d2d14d-87bb-4a0d-b6b7-1525f527082a","x":1023,"y":324,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"mysql"}],"line":[{"x1":298,"y1":33.39999961853027,"x2":488,"y2":90,"strokeDasharray":"none","inUID":"4a9036e7-cef8-43ed-9e16-589b8d5067c4","outUID":"3fccd53e-34bf-4835-d706-d85bc260f591"},{"x1":298,"y1":145,"x2":488,"y2":90,"strokeDasharray":"none","inUID":"6b44fbb3-7573-47ee-bd0c-a0ef73e92e6e","outUID":"3fccd53e-34bf-4835-d706-d85bc260f591"},{"x1":568,"y1":90,"x2":749,"y2":150,"strokeDasharray":"3,5","inUID":"3fccd53e-34bf-4835-d706-d85bc260f591","outUID":"a4c83a34-2fe1-4611-b671-ef8214f32dd7"},{"x1":568,"y1":213.40000915527344,"x2":749,"y2":150,"strokeDasharray":"none","inUID":"fd7b2063-5ee5-4448-e41e-b93b4440a9a3","outUID":"a4c83a34-2fe1-4611-b671-ef8214f32dd7"},{"x1":297,"y1":275.7999725341797,"x2":487,"y2":333,"strokeDasharray":"none","inUID":"f253b1e0-bc3b-48d1-fc7e-f33ea2dbc184","outUID":"0f584ccb-46db-48e3-cae5-08edd5c16fc8"},{"x1":297,"y1":388,"x2":487,"y2":333,"strokeDasharray":"none","inUID":"3964b2ee-8d77-43cf-80f5-cf02bab37978","outUID":"0f584ccb-46db-48e3-cae5-08edd5c16fc8"},{"x1":567,"y1":333,"x2":752,"y2":333,"strokeDasharray":"3,5","inUID":"0f584ccb-46db-48e3-cae5-08edd5c16fc8","outUID":"d7e56c34-e68c-48d9-eeb4-3f0e00b1fc1d"},{"x1":567,"y1":458,"x2":752,"y2":333,"strokeDasharray":"none","inUID":"de224007-4486-42b4-af4c-bafb6f6fe305","outUID":"d7e56c34-e68c-48d9-eeb4-3f0e00b1fc1d"},{"x1":829,"y1":150,"x2":1023,"y2":239,"strokeDasharray":"3,5","inUID":"a4c83a34-2fe1-4611-b671-ef8214f32dd7","outUID":"7920199e-ef99-4a90-e947-92005d7ca4f2"},{"x1":832,"y1":333,"x2":1023,"y2":239,"strokeDasharray":"3,5","inUID":"d7e56c34-e68c-48d9-eeb4-3f0e00b1fc1d","outUID":"7920199e-ef99-4a90-e947-92005d7ca4f2"},{"x1":1103,"y1":239,"x2":1248,"y2":239,"strokeDasharray":"3,5","inUID":"7920199e-ef99-4a90-e947-92005d7ca4f2","outUID":"6e6d8a65-dbd8-4208-f804-172314f5a50f"},{"x1":1103,"y1":364,"x2":1248,"y2":239,"strokeDasharray":"none","inUID":"47d2d14d-87bb-4a0d-b6b7-1525f527082a","outUID":"6e6d8a65-dbd8-4208-f804-172314f5a50f"}]},
+            lists: [],
 
             toolboxPosition: {
-                x: 1000,
+                x: 1200,
                 y: 20
             },
 
@@ -61,9 +66,11 @@ export default {
     },
 
     mounted () {
-        this.D3Diagram.on('onload', function (d) {
-            console.log(d)
-        })
+        this.D3Diagram.on('onload', d => {
+            axios.get('http://192.168.3.205:10001/diagram').then(res => {
+                this.lists = res.data;
+            });
+        });
         /** 初始化画布 */
         this.D3Diagram.init({
             dom: '#canvas',
@@ -92,8 +99,6 @@ export default {
             }
         });
 
-        this.D3Diagram.rect(this.initialData.rect);
-        this.D3Diagram.line(this.initialData.line);
     },
 
     methods: {
@@ -117,8 +122,28 @@ export default {
             }));
         },
 
+        selectChange: function (i) {
+            this.D3Diagram.cleanCanvas();
+            this.D3Diagram.rect(this.lists[i].ui.rect);
+            this.D3Diagram.line(this.lists[i].ui.line);
+        },
+
         save: function () {
-            console.log(JSON.stringify(this.D3Diagram.save()))
+            let ui = this.D3Diagram.save();
+
+            axios.post('http://192.168.3.205:10001/diagram/create', {
+                data: {
+                    pipline: [],
+                    tables: [],
+                    ui: ui
+                }
+            }).then(res => {
+                console.log(res);
+            })
+        },
+
+        clean: function () {
+            this.D3Diagram.cleanCanvas();
         },
 
         addRect: function (rects = []) {
@@ -212,7 +237,7 @@ export default {
     user-select: none;
 
     &-canvas {
-        height: 500px;
+        height: 600px;
         width: calc(100% - 40px);
         margin: auto;
         overflow: hidden;
