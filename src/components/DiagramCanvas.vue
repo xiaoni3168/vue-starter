@@ -30,6 +30,13 @@ export default {
         return {
             container: null,
 
+            initialData:{"rect":[{"uid":"6b44fbb3-7573-47ee-bd0c-a0ef73e92e6e","x":355,"y":330,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset"},{"uid":"3fccd53e-34bf-4835-d706-d85bc260f591","x":720,"y":240,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"operation","name":"Join"},{"uid":"4a9036e7-cef8-43ed-9e16-589b8d5067c4","x":355,"y":145,"width":80,"height":80,"rx":10,"ry":10,"stroke":"#b0b0b0","fill":"#f5f5f5","type":"dataset","name":"Dataset","source":"GD"}],"line":[{"x1":435,"y1":185,"x2":720,"y2":280,"strokeDasharray":"0,0","inUID":"4a9036e7-cef8-43ed-9e16-589b8d5067c4","outUID":"3fccd53e-34bf-4835-d706-d85bc260f591"},{"x1":435,"y1":370,"x2":720,"y2":280,"strokeDasharray":"3,5","inUID":"6b44fbb3-7573-47ee-bd0c-a0ef73e92e6e","outUID":"3fccd53e-34bf-4835-d706-d85bc260f591"}]},
+
+            toolboxPosition: {
+                x: 1000,
+                y: 20
+            },
+
             elements: [
                 {
                     id:   1,
@@ -71,7 +78,6 @@ export default {
         window.D3Diagram = this.D3Diagram;
 
         this.D3Diagram.on('rect_click', function ({data, event}) {
-
             if (data.type == 'dataset') {
                 let p = window.prompt();
                 if (p) {
@@ -79,6 +85,15 @@ export default {
                 }
             }
         });
+
+        this.D3Diagram.on('line_click', function ({data, event}) {
+            if (window.confirm('Do you want to delete this line ?')) {
+                this.deleteLine(data);
+            }
+        });
+
+        this.D3Diagram.rect(this.initialData.rect);
+        this.D3Diagram.line(this.initialData.line);
     },
 
     methods: {
@@ -116,8 +131,15 @@ export default {
         },
 
         initToolboxHeader () {
-            const _d3 = this.D3Diagram.$d3, _this = this;
-            let dx = 0, dy = 0, lastX = 0, lastY = 0, cloneNode = null;
+            const _d3       = this.D3Diagram.$d3,
+                _this       = this;
+            let dx          = 0,
+                dy          = 0,
+                lastX       = this.toolboxPosition.x,
+                lastY       = this.toolboxPosition.y,
+                cloneNode   = null;
+
+            _d3.select('.diagram-content-toolbox').style('transform', `translate(${lastX}px, ${lastY}px)`);
 
             /** toolbox拖拽 */
             _d3.select('.diagram-content-toolbox_head')
@@ -170,7 +192,7 @@ export default {
                             "height": 80,
                             "rx": 10,
                             "ry": 10,
-                            "stroke": '#cccccc',
+                            "stroke": '#b0b0b0',
                             "fill": '#f5f5f5',
                             "type": _d3.select(cloneNode).attr('e-type'),
                             "name": _d3.select(cloneNode).attr('e-name')
@@ -201,6 +223,9 @@ export default {
         background-color: #ffffff;
         position: absolute;
         cursor: grab;
+        &:focus {
+            outline: none;
+        }
         rect {
             transition: stroke, stroke-width .17s;
             cursor: grab;
@@ -240,6 +265,18 @@ export default {
             }
             &[data-type]:hover {
                 fill: none;
+            }
+            &[data-type="connector"] {
+                pointer-events: none;
+            }
+            &[data-type="connector_cover"]:hover {
+                & + path {
+                    stroke-dasharray: 0,0;
+                    stroke-width: 2;
+                    & + use {
+                        display: block !important;
+                    }
+                }
             }
         }
     }
@@ -299,6 +336,38 @@ export default {
                         font-size: 12px;
                     }
                 }
+            }
+        }
+
+        .resize-wrapper {
+            position: absolute;
+            bottom: 20px;
+            right: 50px;
+            display: flex;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border-radius: 3px;
+            font-size: 12px;
+            box-shadow: 0 -1px 1px 0 rgba(0,0,0,.05), 0 1px 2px 0 rgba(0,0,0,.2);
+            &_increase {
+                width: 28px;
+                border-left: 1px solid #e2e5eb;
+                cursor: pointer;
+                &:hover {
+                    background-color: #eeeeee;
+                }
+            }
+            &_decrease {
+                width: 28px;
+                border-right: 1px solid #e2e5eb;
+                cursor: pointer;
+                &:hover {
+                    background-color: #eeeeee;
+                }
+            }
+            &_reset {
+                width: 50px;
             }
         }
     }

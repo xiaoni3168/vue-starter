@@ -24,8 +24,10 @@ export default class D3Diagram {
 
         this.selectD            = null;
 
+        this.viewPercent        = 1;
+
         /** 注册事件 */
-        this.dispatcher = this.$d3.dispatch('onload', 'rect_click', 'rect_move');
+        this.dispatcher = this.$d3.dispatch('onload', 'rect_click', 'rect_move', 'line_click');
     }
 
     /**
@@ -40,10 +42,16 @@ export default class D3Diagram {
         /** 初始化获取画布的绝对位置偏移量 */
         this.containerLeft = this.$d3.select(dom).node().offsetLeft;
 
-        this.containerResize(dom);
+        this.containerResize(dom, config);
 
         /** 初始化工具实例 */
-        this.instance = this.$d3.select(dom).append('svg').attr('tabindex', -1).style('transform', `translate(${-this.containerLeft}px, 0px)`);
+        this.instance = this.$d3
+                            .select(dom)
+                            .append('svg')
+                            .attr('tabindex', -1)
+                            .style('transform', `translate(${-this.containerLeft}px, 0px)`);
+
+        this.initViewbox(dom, config);
 
         /** 画布的拖拽 */
         this.dragCanvas();
@@ -167,7 +175,7 @@ export default class D3Diagram {
                 .attr('cx', d.x + d.width)
                 .attr('cy', d.y + d.height / 2)
                 .attr('r', 4)
-                .attr('fill', '#cccccc')
+                .attr('fill', '#999999')
                 .attr('stroke', '#ffffff')
                 .attr('stroke-width', 1)
                 .classed('animated jelly', true)
@@ -201,7 +209,7 @@ export default class D3Diagram {
                 .append('path')
                 .attr('bind-uid', d.uid)
                 .attr('d', `M ${d.x - 4} ${d.y + d.height / 2 - 6} L ${d.x + Math.sqrt(12 * 12 - 6 * 6) - 4} ${d.y + d.height / 2} L ${d.x - 4} ${d.y + d.height / 2 + 6} z`)
-                .attr('fill', '#cccccc')
+                .attr('fill', '#999999')
                 .attr('stroke', '#ffffff')
                 .attr('stroke-width', 1)
                 .classed('animated jelly', true)
@@ -512,13 +520,15 @@ export default class D3Diagram {
         function drawLineToCanvas (d) {
             if (_this.$d3.select(`g[out-uid="${d.uid}"]`).empty() || _this.$d3.select(`g[out-uid="${d.uid}"]`).attr('in-uid') != _this.connector.attr('input-uid')) {
                 _this.connector.select('path').attr('d', function (_d) {
+                    let dataset = _this.$d3.select(`rect[data-uid="${_this.connector.attr('input-uid')}"]`).data()[0];
+
                     _this.line([
                         {
                             x1: _d.x1,
                             y1: _d.y1,
                             x2: d.x - 5,
                             y2: d.y + d.height / 2,
-                            strokeDasharray: '3,5',
+                            strokeDasharray: (dataset && dataset.source) ? '0,0' : '3,5',
                             inUID: _this.connector.attr('input-uid'),   // 连线 start 连接的rect元素uid
                             outUID: d.uid                               // 连线 end 连接的rect元素uid
                         }
@@ -562,11 +572,11 @@ export default class D3Diagram {
                             p2: { x: d.x2, y: d.y2 }
                         });
                     })
-                    .attr('stroke-dasharray', d => d.strokeDasharray)
                     .attr('fill', 'none')
-                    .attr('stroke', '#cccccc')
-                    .attr('stroke-width', 1)
-                    .attr('data-type', 'connector');
+                    .attr('stroke', '#999999')
+                    .attr('stroke-width', 15)
+                    .attr('stroke-opacity', 0)
+                    .attr('data-type', 'connector_cover');
                 _this.$d3
                     .select(this)
                     .append('path')
@@ -576,21 +586,23 @@ export default class D3Diagram {
                             p2: { x: d.x2, y: d.y2 }
                         });
                     })
+                    .attr('stroke-dasharray', d => d.strokeDasharray)
                     .attr('fill', 'none')
-                    .attr('stroke', '#cccccc')
-                    .attr('stroke-width', 10)
-                    .attr('stroke-opacity', 0)
+                    .attr('stroke', '#999999')
+                    .attr('stroke-width', 1)
                     .attr('data-type', 'connector');
-                // _this.$d3
-                //     .select(this)
-                //     .append('use')
-                //     .attr('x', (d.x2 - d.x1) / 2 + d.x1 - 8)
-                //     .attr('y', (d.y2 - d.y1) / 2 + d.y1)
-                //     .attr('fill', '#cccccc')
-                //     .attr('xlink:href', '#icon-close')
+                _this.$d3
+                    .select(this)
+                    .append('use')
+                    .attr('x', (d.x2 - d.x1) / 2 + d.x1 - 8)
+                    .attr('y', (d.y2 - d.y1) / 2 + d.y1)
+                    .attr('fill', '#cccccc')
+                    .attr('xlink:href', '#icon-close')
+                    .style('display', 'none')
+                    .style('pointer-events', 'none');
             })
             .on('click', function (d) {
-                _this.$d3.select(this).remove();
+                _this.dispatcher.call('line_click', _this, { data: d, event: _this.$d3.event });
             });
     }
 
@@ -801,7 +813,7 @@ export default class D3Diagram {
      * @param  {[type]} dom [description]
      * @return {[type]}     [description]
      */
-    containerResize (dom) {
+    containerResize (dom, config) {
         const _this = this;
         window.document.body.onresize = function () {
             let domHTML =  document.querySelector(dom);
@@ -976,10 +988,59 @@ export default class D3Diagram {
         return result;
     }
 
+    initViewbox (dom, config) {
+        const _this = this;
+
+        this.instance.attr('viewBox', `0 0 ${+config.width.split('%')[0] / 100 * this.$d3.select(dom).node().offsetWidth} ${config.height}`);
+
+        let wrapper = this.$d3.select(dom).append('div').classed('resize-wrapper', true);
+
+        let decreaseBTN = wrapper.append('div').classed('resize-wrapper_decrease', true).text('-').on('click', decrease),
+            resetBTN    = wrapper.append('div').classed('resize-wrapper_reset', true).text(`${this.viewPercent * 100}%`),
+            increaseBTN = wrapper.append('div').classed('resize-wrapper_increase', true).text('+').on('click', increase);
+
+        function decrease () {
+            let label = (200 - (_this.viewPercent * 100 + 10)).toFixed(0);
+
+            label < 10 ? (label = 10, _this.viewPercent = 1.9) : _this.viewPercent = (200 - label) / 100;
+
+            resetBTN.text(`${label}%`);
+
+            _this.setViewbox (dom, config);
+        }
+
+        function increase () {
+            let label = _this.viewPercent > 1 ? (200 - (_this.viewPercent * 100 - 10)).toFixed(0) : (200 - (_this.viewPercent * 100 - 10)).toFixed(0);
+
+            label > 190 ? (label = 190, _this.viewPercent = 0.1) : _this.viewPercent = (_this.viewPercent - 0.1).toFixed(1);
+
+            resetBTN.text(`${label}%`);
+
+            _this.setViewbox (dom, config);
+        }
+    }
+
+    setViewbox (dom, config) {
+        this.instance.attr('viewBox', `0 0 ${+config.width.split('%')[0] / 100 * this.$d3.select(dom).node().offsetWidth * this.viewPercent} ${config.height * this.viewPercent}`);
+    }
+
     repaintRect (d) {
-        this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('xlink:href', {
-            'GD': '#icon-logo-ds-googledrive',
-            'Upload': '#icon-logo-ds-upload'
-        }[d.source]);
+        if (d.source) {
+            this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('xlink:href', {
+                'GD': '#icon-logo-ds-googledrive',
+                'Upload': '#icon-logo-ds-upload'
+            }[d.source]);
+
+            this.$d3
+                .select(`g[in-uid="${d.uid}"]`)
+                .select(`path[data-type="connector"]`)
+                .attr('stroke-dasharray', function (_d) {
+                    return _d.strokeDasharray = '0,0';
+                });
+        }
+    }
+
+    deleteLine (d) {
+        this.$d3.select(`g[in-uid="${d.inUID}"]`).remove();
     }
 }
