@@ -33,51 +33,30 @@ export default class D3Diagram {
 
         this.keyMap             = {
             Mac: {
-                MetaLeft: {
-                    name: 'MetaLeft',
-                    keyCode: 91,
-                    display: '⌘'
-                },
-                Equal: {
-                    name: 'Equal',
-                    keyCode: 187,
-                    display: '+'
-                },
-                Minus: {
-                    name: 'Minus',
-                    keyCode: 189,
-                    display: '-'
-                },
-                Digit0: {
-                    name: 'Digit0',
-                    keyCode: 48,
-                    display: '0'
-                },
-                Backspace: {
-                    name: 'Backspace',
-                    keyCode: 8,
-                    display: 'delete'
-                },
-                Space: {
-                    name: 'Space',
-                    keyCode: 32
-                },
-                ArrowUp: {
-                    name: 'ArrowUp',
-                    keyCode: 38
-                },
-                ArrowDown: {
-                    name: 'ArrowDown',
-                    keyCode: 40
-                },
-                ArrowRight: {
-                    name: 'ArrowRight',
-                    keyCode: 39
-                },
-                ArrowLeft: {
-                    name: 'ArrowLeft',
-                    keyCode: 37
-                }
+                Command     : 'MetaLeft',
+                Equal       : 'Equal',
+                Minus       : 'Minus',
+                Digit0      : 'Digit0',
+                Backspace   : 'Backspace',
+                Space       : 'Space',
+                ArrowUp     : 'ArrowUp',
+                ArrowDown   : 'ArrowDown',
+                ArrowRight  : 'ArrowRight',
+                ArrowLeft   : 'ArrowLeft',
+                Delete      : 'Delete'
+            },
+            Win: {
+                Command     : 'ControlLeft',
+                Equal       : 'Equal',
+                Minus       : 'Minus',
+                Digit0      : 'Digit0',
+                Backspace   : 'Backspace',
+                Space       : 'Space',
+                ArrowUp     : 'ArrowUp',
+                ArrowDown   : 'ArrowDown',
+                ArrowRight  : 'ArrowRight',
+                ArrowLeft   : 'ArrowLeft',
+                Delete      : 'Delete'
             }
         }
 
@@ -1170,25 +1149,39 @@ export default class D3Diagram {
             .text('Drag element here to start your ETL flow...')
     }
 
+    getSystemName () {
+        const ua = window.navigator.userAgent;
+
+        if (ua.indexOf('Macintosh') > -1) {
+            return 'Mac';
+        }
+        if (ua.indexOf('Windows') > -1) {
+            return 'Win';
+        }
+    }
+
     bindKeyEvent () {
         const _this     = this,
                 dm      = this.$d3.select(document),
-                keyMap  = this.keyMap.Mac;
+                keyMap  = this.keyMap[this.getSystemName()];
         let rect, icon, output, input, close;
 
         dm.on('keydown', function () {
             _this.$d3.event.preventDefault();
             _this.$d3.event.stopPropagation();
-            console.log(_this.$d3.event);
-            if (_this.$d3.event.metaKey) {
+            let commandKey = {
+                Mac: _this.$d3.event.metaKey,
+                Win: _this.$d3.event.ctrlKey
+            }[_this.getSystemName()];
+            if (commandKey) {
                 switch (_this.$d3.event.code) {
-                    case keyMap.Equal.name:
+                    case keyMap.Equal:
                         _this.$d3.select('.resize-wrapper_increase').node().click();
                         break;
-                    case keyMap.Minus.name:
+                    case keyMap.Minus:
                         _this.$d3.select('.resize-wrapper_decrease').node().click();
                         break;
-                    case keyMap.Digit0.name:
+                    case keyMap.Digit0:
                         _this.resetViewbox();
                         break;
                     default:
@@ -1196,7 +1189,8 @@ export default class D3Diagram {
                 }
             } else {
                 switch (_this.$d3.event.code) {
-                    case keyMap.Backspace.name:
+                    case keyMap.Backspace:
+                    case keyMap.Delete:
                         if (_this.selectD) {
                             _this.deleteRect(_this.selectD);
                         }
@@ -1204,21 +1198,21 @@ export default class D3Diagram {
                             _this.deleteRect(d);
                         });
                         break;
-                    case keyMap.Space.name:
+                    case keyMap.Space:
                         _this.instance.classed('drag', true);
                         _this.dragging = true;
                         break;
-                    case keyMap.ArrowUp.name:
-                    case keyMap.ArrowRight.name:
-                    case keyMap.ArrowDown.name:
-                    case keyMap.ArrowLeft.name:
+                    case keyMap.ArrowUp:
+                    case keyMap.ArrowRight:
+                    case keyMap.ArrowDown:
+                    case keyMap.ArrowLeft:
                         if (_this.selectD) {
                             loadSelectD();
 
-                            keyMap.ArrowUp.name     == _this.$d3.event.code && rect.attr('y', d => (d.y = d.y % 5 == 0 ? d.y - 5 : d.y - d.y % 5 - 5));
-                            keyMap.ArrowRight.name  == _this.$d3.event.code && rect.attr('x', d => (d.x = d.x % 5 == 0 ? d.x + 5 : d.x - d.x % 5 + 5));
-                            keyMap.ArrowDown.name   == _this.$d3.event.code && rect.attr('y', d => (d.y = d.y % 5 == 0 ? d.y + 5 : d.y - d.y % 5 + 5));
-                            keyMap.ArrowLeft.name   == _this.$d3.event.code && rect.attr('x', d => (d.x = d.x % 5 == 0 ? d.x - 5 : d.x - d.x % 5 - 5));
+                            keyMap.ArrowUp     == _this.$d3.event.code && rect.attr('y', d => (d.y = d.y % 5 == 0 ? d.y - 5 : d.y - d.y % 5 - 5));
+                            keyMap.ArrowRight  == _this.$d3.event.code && rect.attr('x', d => (d.x = d.x % 5 == 0 ? d.x + 5 : d.x - d.x % 5 + 5));
+                            keyMap.ArrowDown   == _this.$d3.event.code && rect.attr('y', d => (d.y = d.y % 5 == 0 ? d.y + 5 : d.y - d.y % 5 + 5));
+                            keyMap.ArrowLeft   == _this.$d3.event.code && rect.attr('x', d => (d.x = d.x % 5 == 0 ? d.x - 5 : d.x - d.x % 5 - 5));
 
                             moveWithRect();
                         }
@@ -1231,7 +1225,7 @@ export default class D3Diagram {
 
         dm.on('keyup', function () {
             switch (_this.$d3.event.code) {
-                case keyMap.Space.name:
+                case keyMap.Space:
                     _this.instance.classed('drag', false);
                     _this.dragging = false;
                     break;
@@ -1245,7 +1239,7 @@ export default class D3Diagram {
                 _this.instance.selectAll('rect[data-uid]').classed('cliped', false);
                 !_this.dragging && _this.instance
                     .selectAll('rect.clip')
-                    .data([{ x: _this.$d3.event.x, y: _this.$d3.event.y, height: 0, width: 0 }])
+                    .data([{ x: _this.getCoords(_this.$d3.event).x, y: _this.getCoords(_this.$d3.event).y, height: 0, width: 0 }])
                     .enter()
                     .append('rect')
                     .classed('clip', true)
