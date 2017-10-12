@@ -1,4 +1,4 @@
-none<template>
+<template>
     <div class="diagram-content">
         <div class="diagram-content-canvas" id="canvas">
             <div class="diagram-content-toolbox">
@@ -38,7 +38,7 @@ export default {
             lists: [],
 
             toolboxPosition: {
-                x: 1200,
+                x: 10,
                 y: 20
             },
 
@@ -194,14 +194,14 @@ export default {
                             _d3.select('.diagram-content-toolbox').style('pointer-events', 'none');
 
                             cloneNode.className += ' dragging';
-                            cloneNode.style.transform = `translate(${_d3.event.x - 85}px, ${_d3.event.y - 20}px)`;
+                            cloneNode.style.transform = `translate(${_d3.event.x - _this.D3Diagram.containerLeft}px, ${_d3.event.y - _this.D3Diagram.containerTop}px)`;
                             document.querySelector('#canvas').appendChild(cloneNode);
                         })
                 });
 
             this.D3Diagram.setMouseMoveFunc(function () {
                 if (cloneNode) {
-                    _d3.select(cloneNode).style('transform', `translate(${_d3.event.x - 85}px, ${_d3.event.y - 20}px)`);
+                    _d3.select(cloneNode).style('transform', `translate(${_d3.event.x - _this.D3Diagram.containerLeft}px, ${_d3.event.y - _this.D3Diagram.containerTop}px)`);
                 }
             });
             this.D3Diagram.setMouseUpFuncs(function () {
@@ -237,8 +237,8 @@ export default {
     user-select: none;
 
     &-canvas {
-        height: 600px;
-        width: calc(100% - 40px);
+        height: 500px;
+        width: 100%;
         margin: auto;
         overflow: hidden;
         position: relative;
@@ -276,6 +276,7 @@ export default {
             }
             &.cliped {
                 stroke: #2888e5;
+                fill: #999999;
                 stroke-width: 2;
                 stroke-dasharray: 5;
                 animation: marchingants .8s forwards infinite linear;

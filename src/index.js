@@ -5,6 +5,7 @@ import store from './vuex';
 import firstComponents from './components/firstComponent.vue';
 import Diagram from './components/diagram.vue';
 import DiagramCanvas from './components/DiagramCanvas.vue';
+import Etl from './components/etl.vue';
 
 import plugins from './plugins/plugins';
 import VueD3 from './plugins/vue-d3';
@@ -25,10 +26,14 @@ const routes = [{
     name: 'diagram',
     path: '/diagram',
     component: Diagram
-},{
+}, {
     name: 'diagramCanvas',
     path: '/DiagramCanvas',
     component: DiagramCanvas
+}, {
+    name: 'etl',
+    path: '/etl',
+    component: Etl
 }, {
     path: '*',
     redirect: '/home'

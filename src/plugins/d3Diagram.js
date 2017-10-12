@@ -43,7 +43,8 @@ export default class D3Diagram {
                 ArrowDown   : 'ArrowDown',
                 ArrowRight  : 'ArrowRight',
                 ArrowLeft   : 'ArrowLeft',
-                Delete      : 'Delete'
+                Delete      : 'Delete',
+                KeyA        : 'KeyA'
             },
             Win: {
                 Command     : 'ControlLeft',
@@ -56,7 +57,8 @@ export default class D3Diagram {
                 ArrowDown   : 'ArrowDown',
                 ArrowRight  : 'ArrowRight',
                 ArrowLeft   : 'ArrowLeft',
-                Delete      : 'Delete'
+                Delete      : 'Delete',
+                KeyA        : 'KeyA'
             }
         }
 
@@ -78,6 +80,7 @@ export default class D3Diagram {
 
         /** 初始化获取画布的绝对位置偏移量 */
         this.containerLeft = this.$d3.select(dom).node().offsetLeft;
+        this.containerTop = this.$d3.select(dom).node().offsetTop;
 
         this.containerResize(dom, config);
 
@@ -88,7 +91,7 @@ export default class D3Diagram {
                             .select(dom)
                             .append('svg')
                             .attr('tabindex', -1)
-                            .style('transform', `translate(${-this.containerLeft}px, 0px)`);
+                            .style('transform', `translate(${-this.containerLeft}px, ${-this.containerTop}px)`);
 
         this.initViewbox(dom, config);
 
@@ -850,6 +853,9 @@ export default class D3Diagram {
             let domHTML =  document.querySelector(dom);
 
             _this.containerLeft = domHTML.offsetLeft;
+            _this.containerTop = domHTML.offsetTop;
+
+            _this.setViewbox(dom, config);
         }
     }
 
@@ -1183,6 +1189,9 @@ export default class D3Diagram {
                         break;
                     case keyMap.Digit0:
                         _this.resetViewbox();
+                        break;
+                    case keyMap.KeyA:
+                        _this.instance.selectAll('rect[data-uid]').classed('jelly animated', false).classed('cliped', true);
                         break;
                     default:
                         break;
