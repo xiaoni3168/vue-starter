@@ -1,3 +1,4 @@
+const Velocity = require('velocity-animate/velocity');
 /**
  * ETL流程图绘制工具
  *
@@ -18,6 +19,9 @@ export default class D3Diagram {
         this.connecting         = false;    // 当前画布上是否有连线事件
         this.connector          = null;     // 当前画布上正在连接的线 (type: d3.selector)
 
+        this.dom                = '';
+        this.config             = null;
+
         /** 画布绝对位置偏移量 */
         this.containerLeft      = 0;
         this.containerTop       = 0;
@@ -25,6 +29,57 @@ export default class D3Diagram {
         this.selectD            = null;
 
         this.viewPercent        = 1;
+        this.dragging           = false;
+
+        this.keyMap             = {
+            Mac: {
+                MetaLeft: {
+                    name: 'MetaLeft',
+                    keyCode: 91,
+                    display: '⌘'
+                },
+                Equal: {
+                    name: 'Equal',
+                    keyCode: 187,
+                    display: '+'
+                },
+                Minus: {
+                    name: 'Minus',
+                    keyCode: 189,
+                    display: '-'
+                },
+                Digit0: {
+                    name: 'Digit0',
+                    keyCode: 48,
+                    display: '0'
+                },
+                Backspace: {
+                    name: 'Backspace',
+                    keyCode: 8,
+                    display: 'delete'
+                },
+                Space: {
+                    name: 'Space',
+                    keyCode: 32
+                },
+                ArrowUp: {
+                    name: 'ArrowUp',
+                    keyCode: 38
+                },
+                ArrowDown: {
+                    name: 'ArrowDown',
+                    keyCode: 40
+                },
+                ArrowRight: {
+                    name: 'ArrowRight',
+                    keyCode: 39
+                },
+                ArrowLeft: {
+                    name: 'ArrowLeft',
+                    keyCode: 37
+                }
+            }
+        }
 
         /** 注册事件 */
         this.dispatcher = this.$d3.dispatch('onload', 'rect_click', 'rect_move', 'line_click');
@@ -39,10 +94,15 @@ export default class D3Diagram {
     init ({ dom, config = {} }) {
         const _this = this;
 
+        this.dom = dom;
+        this.config = config;
+
         /** 初始化获取画布的绝对位置偏移量 */
         this.containerLeft = this.$d3.select(dom).node().offsetLeft;
 
         this.containerResize(dom, config);
+
+        this.bindKeyEvent();
 
         /** 初始化工具实例 */
         this.instance = this.$d3
@@ -237,21 +297,7 @@ export default class D3Diagram {
                 .classed('icon-close', true)
                 .style('display', 'none')
                 .on('click', function () {
-                    /** 点击关闭按钮时删除所有绑定当前uid的svg元素 */
-                    _this.$d3.selectAll(`[bind-uid="${d.uid}"]`).each(function () {
-                        _this.$d3.select(this).remove();
-                    });
-                    _this.$d3.selectAll(`[in-uid="${d.uid}"]`).each(function () {
-                        _this.$d3.select(this).remove();
-                    });
-                    _this.$d3.selectAll(`[out-uid="${d.uid}"]`).each(function () {
-                        _this.$d3.select(this).remove();
-                    });
-                    _this.$d3.select(`[data-uid="${d.uid}"]`).remove();
-
-                    if (_this.instance.selectAll('*').empty()) {
-                        _this.cleanCanvas();
-                    }
+                    _this.deleteRect(d);
                 });
 
             /**
@@ -415,11 +461,13 @@ export default class D3Diagram {
 
             /** 模拟rect元素上的click事件 */
             if (_this.$d3.event.sourceEvent.timeStamp - vTime < 200) {
+                // 点击元素事件
+                _this.dispatcher.call('rect_click', _this, {data: d, event: _this.$d3.event});
+
                 /** 点击之前初始化点击 */
                 if (_this.selectD && _this.selectD.uid != d.uid) {
                     _this.$d3.select(`use[bind-uid="${_this.selectD.uid}"].icon-close`).style('display', 'none');
                     _this.$d3.select(`rect[data-uid="${_this.selectD.uid}"]`).classed('focused', false);
-                    _this.instance.on('keydown', null);
                 }
 
                 /** 展示或隐藏rect元素上的关闭按钮 */
@@ -431,49 +479,13 @@ export default class D3Diagram {
 
                     _this.$d3.select(this).classed('focused', false);
 
-                    _this.instance.on('keydown', null);
                 } else {
                     _this.selectD = d;
 
                     close.style('display', 'block');
 
                     _this.$d3.select(this).classed('focused', true);
-
-                    _this.instance.node().focus();
-                    _this.instance.on('keydown', function () {
-                        let rect = _this.$d3.select(`rect[data-uid="${d.uid}"]`),
-                            icon = _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`),
-                            output = _this.$d3.select(`circle[bind-uid="${d.uid}"]`),
-                            input = _this.$d3.select(`path[bind-uid="${d.uid}"]`),
-                            close = _this.$d3.select(`use[bind-uid="${d.uid}"].icon-close`);
-                        switch (_this.$d3.event.keyCode) {
-                            case 37:
-                                rect.attr('x', d.x = d.x % 5 == 0 ? d.x - 5 : d.x - d.x % 5 - 5);
-                                break;
-                            case 38:
-                                rect.attr('y', d.y = d.y % 5 == 0 ? d.y - 5 : d.y - d.y % 5 - 5);
-                                break;
-                            case 39:
-                                rect.attr('x', d.x = d.x % 5 == 0 ? d.x + 5 : d.x - d.x % 5 + 5);
-                                break;
-                            case 40:
-                                rect.attr('y', d.y = d.y % 5 == 0 ? d.y + 5 : d.y - d.y % 5 + 5);
-                                break;
-                            default:
-                                break;
-                        }
-
-                        close.attr('x', d.x + d.width - 12).attr('y', d.y + 4);
-                        output.attr('cx', d.x + d.width).attr('cy', d.y + d.height / 2);
-                        icon.attr('x', d.x + (d.width - 50) / 2).attr('y', d.y + (d.width - 50) / 2);
-                        input.attr('d', `M ${d.x - 4} ${d.y + d.height / 2 - 6} L ${d.x + Math.sqrt(12 * 12 - 6 * 6) - 4} ${d.y + d.height / 2} L ${d.x - 4} ${d.y + d.height / 2 + 6} z`);
-
-                        _this.moveLine(d, d.x, d.y);
-                    });
                 }
-
-                // 点击元素事件
-                _this.dispatcher.call('rect_click', _this, {data: d, event: _this.$d3.event});
             }
         }
 
@@ -565,6 +577,25 @@ export default class D3Diagram {
         }
 
         return this.instance;
+    }
+
+    deleteRect (d) {
+        const _this = this;
+        /** 点击关闭按钮时删除所有绑定当前uid的svg元素 */
+        this.$d3.selectAll(`[bind-uid="${d.uid}"]`).each(function () {
+            _this.$d3.select(this).remove();
+        });
+        this.$d3.selectAll(`[in-uid="${d.uid}"]`).each(function () {
+            _this.$d3.select(this).remove();
+        });
+        this.$d3.selectAll(`[out-uid="${d.uid}"]`).each(function () {
+            _this.$d3.select(this).remove();
+        });
+        this.$d3.select(`[data-uid="${d.uid}"]`).remove();
+
+        if (this.instance.selectAll('*').empty()) {
+            this.cleanCanvas();
+        }
     }
 
     /**
@@ -926,18 +957,20 @@ export default class D3Diagram {
             dy          = 0;
 
         this.onMouseDownFuncs.push(function () {
+            if(_this.dragging) {
+                _this.$d3.select(this).classed('dragging', true);
+                dragging = true;
+
+                dx = _this.$d3.event.x;
+                dy = _this.$d3.event.y;
+            }
             /** 初始化选中的元素，并去掉选中状态 */
             if (_this.selectD && _this.$d3.event.target.nodeName != 'use') { // 当点击的不是删除按钮时才初始化
                 _this.$d3.select(`use[bind-uid="${_this.selectD.uid}"].icon-close`).style('display', 'none');
                 _this.$d3.select(`rect[data-uid="${_this.selectD.uid}"]`).classed('focused', false);
                 _this.instance.on('keydown', null);
+                _this.selectD = null;
             }
-
-            _this.$d3.select(this).style('cursor', '-webkit-grabbing');
-            dragging = true;
-
-            dx = _this.$d3.event.x;
-            dy = _this.$d3.event.y;
         });
 
         this.onMouseMoveFunc.push(function () {
@@ -971,7 +1004,7 @@ export default class D3Diagram {
 
         this.onMouseUpFuncs.push(function () {
             if (dragging) {
-                _this.$d3.select(this).style('cursor', '-webkit-grab');
+                _this.$d3.select(this).classed('dragging', false);
 
                 let selector = _this.$d3.select(this);
 
@@ -1014,12 +1047,13 @@ export default class D3Diagram {
 
         this.instance.attr('viewBox', `0 0 ${+config.width.split('%')[0] / 100 * this.$d3.select(dom).node().offsetWidth} ${config.height}`);
 
-        let wrapper = this.$d3.select(dom).append('div').classed('resize-wrapper', true);
+        let wrapper     = this.$d3.select(dom).append('div').classed('resize-wrapper', true),
+            resizeTip   = this.$d3.select(dom).append('div').classed('resize-tip', true).style('opacity', 0);
 
         let decreaseBTN = wrapper.append('div').classed('resize-wrapper_decrease', true).text('-').on('click', decrease),
             resetBTN    = wrapper.append('div').classed('resize-wrapper_reset', true).text(`${this.viewPercent * 100}%`),
-            increaseBTN = wrapper.append('div').classed('resize-wrapper_increase', true).text('+').on('click', increase);
-
+            increaseBTN = wrapper.append('div').classed('resize-wrapper_increase', true).text('+').on('click', increase),
+            timer       = 0;
         function decrease () {
             let label = (200 - (_this.viewPercent * 100 + 10)).toFixed(0);
 
@@ -1027,7 +1061,9 @@ export default class D3Diagram {
 
             resetBTN.text(`${label}%`);
 
-            _this.setViewbox (dom, config);
+            _this.setViewbox(dom, config);
+
+            // showResizeTip(label);
         }
 
         function increase () {
@@ -1037,8 +1073,33 @@ export default class D3Diagram {
 
             resetBTN.text(`${label}%`);
 
-            _this.setViewbox (dom, config);
+            _this.setViewbox(dom, config);
+
+            // showResizeTip(label);
         }
+
+        function showResizeTip (label) {
+            resizeTip.text(`${label}%`);
+            if (timer) {
+                clearInterval(timer);
+            }
+            if (+label == 10 || +label == 190) {
+                Velocity.animate(resizeTip.node(), { opacity: 0 }, 300);
+            } else {
+                Velocity.animate(resizeTip.node(), { opacity: 1 }, 700).then(() => {
+                    timer = setInterval(() => {
+                        Velocity.animate(resizeTip.node(), { opacity: 0 }, 500);
+                        clearInterval(timer);
+                    }, 1000);
+                });
+            }
+        }
+    }
+
+    resetViewbox () {
+        this.$d3.select('.resize-wrapper_reset').text('100%');
+        this.viewPercent = 1;
+        this.setViewbox(this.dom, this.config);
     }
 
     setViewbox (dom, config) {
@@ -1107,5 +1168,156 @@ export default class D3Diagram {
             .attr('alignment-baseline', 'middle')
             .style('text-shadow', '3px 3px 4px #eeeeee')
             .text('Drag element here to start your ETL flow...')
+    }
+
+    bindKeyEvent () {
+        const _this     = this,
+                dm      = this.$d3.select(document),
+                keyMap  = this.keyMap.Mac;
+        let rect, icon, output, input, close;
+
+        dm.on('keydown', function () {
+            _this.$d3.event.preventDefault();
+            _this.$d3.event.stopPropagation();
+            console.log(_this.$d3.event);
+            if (_this.$d3.event.metaKey) {
+                switch (_this.$d3.event.code) {
+                    case keyMap.Equal.name:
+                        _this.$d3.select('.resize-wrapper_increase').node().click();
+                        break;
+                    case keyMap.Minus.name:
+                        _this.$d3.select('.resize-wrapper_decrease').node().click();
+                        break;
+                    case keyMap.Digit0.name:
+                        _this.resetViewbox();
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                switch (_this.$d3.event.code) {
+                    case keyMap.Backspace.name:
+                        if (_this.selectD) {
+                            _this.deleteRect(_this.selectD);
+                        }
+                        _this.instance.selectAll('rect.cliped').each(d => {
+                            _this.deleteRect(d);
+                        });
+                        break;
+                    case keyMap.Space.name:
+                        _this.instance.classed('drag', true);
+                        _this.dragging = true;
+                        break;
+                    case keyMap.ArrowUp.name:
+                    case keyMap.ArrowRight.name:
+                    case keyMap.ArrowDown.name:
+                    case keyMap.ArrowLeft.name:
+                        if (_this.selectD) {
+                            loadSelectD();
+
+                            keyMap.ArrowUp.name     == _this.$d3.event.code && rect.attr('y', d => (d.y = d.y % 5 == 0 ? d.y - 5 : d.y - d.y % 5 - 5));
+                            keyMap.ArrowRight.name  == _this.$d3.event.code && rect.attr('x', d => (d.x = d.x % 5 == 0 ? d.x + 5 : d.x - d.x % 5 + 5));
+                            keyMap.ArrowDown.name   == _this.$d3.event.code && rect.attr('y', d => (d.y = d.y % 5 == 0 ? d.y + 5 : d.y - d.y % 5 + 5));
+                            keyMap.ArrowLeft.name   == _this.$d3.event.code && rect.attr('x', d => (d.x = d.x % 5 == 0 ? d.x - 5 : d.x - d.x % 5 - 5));
+
+                            moveWithRect();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
+
+        dm.on('keyup', function () {
+            switch (_this.$d3.event.code) {
+                case keyMap.Space.name:
+                    _this.instance.classed('drag', false);
+                    _this.dragging = false;
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        this.onMouseDownFuncs.push(function () {
+            if (_this.$d3.event.target.nodeName != 'use') {
+                _this.instance.selectAll('rect[data-uid]').classed('cliped', false);
+                !_this.dragging && _this.instance
+                    .selectAll('rect.clip')
+                    .data([{ x: _this.$d3.event.x, y: _this.$d3.event.y, height: 0, width: 0 }])
+                    .enter()
+                    .append('rect')
+                    .classed('clip', true)
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y)
+                    .attr('height', d => d.height)
+                    .attr('width', d => d.width)
+                    .attr('stroke', '#eeeeee')
+                    .attr('fill', 'rgba(40, 136, 229, 0.2)')
+                    .attr('stroke-width', 1);
+            }
+        });
+        this.onMouseMoveFunc.push(function () {
+            if (!_this.instance.select('rect.clip').empty()) {
+                _this.instance
+                    .select('rect.clip')
+                    .attr('x', d => {
+                        return _this.getCoords(_this.$d3.event).x > d.x ? d.x : _this.getCoords(_this.$d3.event).x;
+                    })
+                    .attr('y', d => {
+                        return _this.getCoords(_this.$d3.event).y > d.y ? d.y : _this.getCoords(_this.$d3.event).y;
+                    })
+                    .attr('height', d => {
+                        return Math.abs(_this.getCoords(_this.$d3.event).y - d.y);
+                    })
+                    .attr('width', d => {
+                        return Math.abs(_this.getCoords(_this.$d3.event).x - d.x);
+                    })
+                    .each(d => {
+                        checkClip({
+                            x: _this.getCoords(_this.$d3.event).x > d.x ? d.x : _this.getCoords(_this.$d3.event).x,
+                            y: _this.getCoords(_this.$d3.event).y > d.y ? d.y : _this.getCoords(_this.$d3.event).y,
+                            height: Math.abs(_this.getCoords(_this.$d3.event).y - d.y),
+                            width: Math.abs(_this.getCoords(_this.$d3.event).x - d.x)
+                        });
+                    });
+            }
+        });
+        this.onMouseUpFuncs.push(function () {
+            _this.instance.select('rect.clip').remove();
+        });
+
+        function loadSelectD () {
+            let d = _this.selectD;
+
+            rect = _this.$d3.select(`rect[data-uid="${d.uid}"]`),
+            icon = _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`),
+            output = _this.$d3.select(`circle[bind-uid="${d.uid}"]`),
+            input = _this.$d3.select(`path[bind-uid="${d.uid}"]`),
+            close = _this.$d3.select(`use[bind-uid="${d.uid}"].icon-close`);
+        }
+
+        function moveWithRect () {
+            rect.each(d => {
+                close.attr('x', d.x + d.width - 12).attr('y', d.y + 4);
+                output.attr('cx', d.x + d.width).attr('cy', d.y + d.height / 2);
+                icon.attr('x', d.x + (d.width - 50) / 2).attr('y', d.y + (d.width - 50) / 2);
+                input.attr('d', `M ${d.x - 4} ${d.y + d.height / 2 - 6} L ${d.x + Math.sqrt(12 * 12 - 6 * 6) - 4} ${d.y + d.height / 2} L ${d.x - 4} ${d.y + d.height / 2 + 6} z`);
+
+                _this.moveLine(d, d.x, d.y);
+            });
+        }
+
+        function checkClip (rect) {
+            _this.instance
+                .selectAll('rect[data-uid]')
+                .classed('jelly animated', false)
+                .each(function (d) {
+                    _this.$d3
+                        .select(this)
+                        .classed('cliped', !((d.x + d.height < rect.x) || (d.y + d.height < rect.y) || (rect.x + rect.width < d.x) || (rect.y + rect.height < d.y)));
+                });
+        }
     }
 }

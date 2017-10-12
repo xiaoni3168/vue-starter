@@ -85,7 +85,7 @@ export default {
         window.D3Diagram = this.D3Diagram;
 
         this.D3Diagram.on('rect_click', function ({data, event}) {
-            if (data.type == 'dataset') {
+            if (data.type == 'dataset' && this.selectD && this.selectD.uid == data.uid) {
                 let p = window.prompt();
                 if (p) {
                     this.repaintRect(Object.assign(data, {source: p}))
@@ -247,11 +247,16 @@ export default {
     svg {
         background-color: #ffffff;
         position: absolute;
-        cursor: grab;
         &:focus {
             outline: none;
         }
-        rect {
+        &.drag {
+            cursor: grab;
+        }
+        &.dragging {
+            cursor: grabbing;
+        }
+        rect[data-uid] {
             transition: stroke, stroke-width .17s;
             cursor: grab;
             &:hover {
@@ -268,6 +273,12 @@ export default {
             &.connecting-unabled {
                 stroke: #ff4747;
                 stroke-width: 2;
+            }
+            &.cliped {
+                stroke: #2888e5;
+                stroke-width: 2;
+                stroke-dasharray: 5;
+                animation: marchingants .8s forwards infinite linear;
             }
         }
 
@@ -397,6 +408,21 @@ export default {
                 width: 50px;
             }
         }
+        .resize-tip {
+            position: absolute;
+            pointer-events: none;
+            width: 100px;
+            left: 50%;
+            top: 50%;
+            font-size: 36px;
+            background-color: rgba(0,0,0,0.8);
+            color: #f0f0f0;
+            text-align: center;
+            padding: 10px 20px;
+            transform: translate(-50%, -50%);
+            border-radius: 36px;
+            box-shadow: 0px 1px 1px 1px rgba(0,0,0,0.3);
+        }
     }
 }
 
@@ -511,6 +537,12 @@ export default {
           -webkit-transform: matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
           transform: matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
       }
+}
+
+@keyframes marchingants {
+    to {
+        stroke-dashoffset: 9;
+    }
 }
 
 .jelly {
