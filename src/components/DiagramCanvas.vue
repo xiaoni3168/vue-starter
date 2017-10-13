@@ -393,6 +393,7 @@ export default {
                 width: 28px;
                 border-left: 1px solid #e2e5eb;
                 cursor: pointer;
+                &.clicked,
                 &:hover {
                     background-color: #eeeeee;
                 }
@@ -401,6 +402,7 @@ export default {
                 width: 28px;
                 border-right: 1px solid #e2e5eb;
                 cursor: pointer;
+                &.clicked,
                 &:hover {
                     background-color: #eeeeee;
                 }
@@ -423,6 +425,16 @@ export default {
             transform: translate(-50%, -50%);
             border-radius: 36px;
             box-shadow: 0px 1px 1px 1px rgba(0,0,0,0.3);
+        }
+        .etl-empty {
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-100%);
+            font-size: 48px;
+            text-align: center;
+            color: #f0f0f0;
+            pointer-events: none;
         }
     }
 }

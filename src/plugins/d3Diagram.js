@@ -15,6 +15,7 @@ export default class D3Diagram {
         this.onMouseDownFuncs   = [];       // 存储所有需要在画布上触发的 mousedown 事件栈
         this.onMouseUpFuncs     = [];       // 存储所有需要在画布上触发的 mouseup 事件栈
         this.onMouseMoveFunc    = [];       // 存储所有需要在画布上触发的 mousemove 事件栈
+        this.onMouseLeaveFunc   = [];
         /** 连线相关变量 */
         this.connecting         = false;    // 当前画布上是否有连线事件
         this.connector          = null;     // 当前画布上正在连接的线 (type: d3.selector)
@@ -91,7 +92,7 @@ export default class D3Diagram {
                             .select(dom)
                             .append('svg')
                             .attr('tabindex', -1)
-                            .style('transform', `translate(${-this.containerLeft}px, ${-this.containerTop}px)`);
+                            // .style('transform', `translate(${-this.containerLeft}px, ${-this.containerTop}px)`);
 
         this.initViewbox(dom, config);
 
@@ -117,6 +118,11 @@ export default class D3Diagram {
             })
             .on('mousemove', function () {
                 _this.onMouseMoveFunc.forEach(func => {
+                    func.call(this);
+                });
+            })
+            .on('mouseleave', function () {
+                _this.onMouseLeaveFunc.forEach(func => {
                     func.call(this);
                 });
             });
@@ -166,7 +172,7 @@ export default class D3Diagram {
     rect (configs = [], func = {}) {
         const _this = this;
 
-        this.$d3.select('text').remove();
+        this.$d3.select('div.etl-empty').remove();
 
         let vTime   = 0,    // 计算元素 mousedown 和 mouseup 事件的timeStamp差值，用来模拟 click 事件(vTime < 300ms)
             rectData;       // 画布上所有rect元素数据
@@ -647,11 +653,11 @@ export default class D3Diagram {
      * @return {[type]}    [description]
      */
     calculateLine ({ p1, p2 }) {
-        const MAX_ARC_DIAMETER = 20;
+        const MAX_ARC_DIAMETER = 10;
 
         /** 画笔移动到初始点p1 */
         let connector = `M ${p1.x} ${p1.y} `;
-        if ((Math.abs(calculateYDistance()) < 20 && calculateXDistance() < 0) || (Math.abs(calculateYDistance()) < 20 && Math.abs(calculateXDistance()) < 60)) {
+        if ((Math.abs(calculateYDistance()) < MAX_ARC_DIAMETER && calculateXDistance() < 0) || (Math.abs(calculateYDistance()) < MAX_ARC_DIAMETER && Math.abs(calculateXDistance()) < 60)) {
 
         } else {
             /**
@@ -1004,6 +1010,38 @@ export default class D3Diagram {
                 dragging = false;
             }
         });
+
+        this.onMouseLeaveFunc.push(function () {
+            if (dragging) {
+                _this.$d3.select(this).classed('dragging', false);
+
+                let selector = _this.$d3.select(this);
+
+                selector.selectAll('rect')
+                    .attr('x', function (d) {
+                        let mx = d.x + _this.$d3.event.x - dx,
+                            my = d.y + _this.$d3.event.y - dy;
+
+                        _this.$d3.select(`circle[bind-uid="${d.uid}"]`).attr('cx', mx + d.width);
+                        _this.$d3.select(`path[bind-uid="${d.uid}"]`).attr('d', `M ${mx - 4} ${my + d.height / 2 - 6} L ${mx + Math.sqrt(12 * 12 - 6 * 6) - 4} ${my + d.height / 2} L ${mx - 4} ${my + d.height / 2 + 6} z`);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"].icon-close`).attr('x', mx + d.width - 12);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('x', mx + (d.width - 50) / 2);
+
+                        _this.moveLine(d, mx, my);
+
+                        return d.x = mx;
+                    })
+                    .attr('y', function (d) {
+                        _this.$d3.select(`circle[bind-uid="${d.uid}"]`).attr('cy', d.y + _this.$d3.event.y - dy + d.height / 2);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"].icon-close`).attr('y', d.y + _this.$d3.event.y - dy + 4);
+                        _this.$d3.select(`use[bind-uid="${d.uid}"].icon-dataset`).attr('y', d.y + _this.$d3.event.y - dy + (d.height - 50) / 2);
+
+                        return d.y = d.y + _this.$d3.event.y - dy;
+                    });
+
+                dragging = false;
+            }
+        });
     }
 
     /**
@@ -1040,27 +1078,31 @@ export default class D3Diagram {
             increaseBTN = wrapper.append('div').classed('resize-wrapper_increase', true).text('+').on('click', increase),
             timer       = 0;
         function decrease () {
-            let label = (200 - (_this.viewPercent * 100 + 10)).toFixed(0);
+            if (!_this.instance.selectAll('*').empty()) {
+                let label = (200 - (_this.viewPercent * 100 + 10)).toFixed(0);
 
-            label < 10 ? (label = 10, _this.viewPercent = 1.9) : _this.viewPercent = (200 - label) / 100;
+                label < 10 ? (label = 10, _this.viewPercent = 1.9) : _this.viewPercent = (200 - label) / 100;
 
-            resetBTN.text(`${label}%`);
+                resetBTN.text(`${label}%`);
 
-            _this.setViewbox(dom, config);
+                _this.setViewbox(dom, config);
 
-            // showResizeTip(label);
+                // showResizeTip(label);
+            }
         }
 
         function increase () {
-            let label = _this.viewPercent > 1 ? (200 - (_this.viewPercent * 100 - 10)).toFixed(0) : (200 - (_this.viewPercent * 100 - 10)).toFixed(0);
+            if (!_this.instance.selectAll('*').empty()) {
+                let label = _this.viewPercent > 1 ? (200 - (_this.viewPercent * 100 - 10)).toFixed(0) : (200 - (_this.viewPercent * 100 - 10)).toFixed(0);
 
-            label > 190 ? (label = 190, _this.viewPercent = 0.1) : _this.viewPercent = (_this.viewPercent - 0.1).toFixed(1);
+                label > 190 ? (label = 190, _this.viewPercent = 0.1) : _this.viewPercent = (_this.viewPercent - 0.1).toFixed(1);
 
-            resetBTN.text(`${label}%`);
+                resetBTN.text(`${label}%`);
 
-            _this.setViewbox(dom, config);
+                _this.setViewbox(dom, config);
 
-            // showResizeTip(label);
+                // showResizeTip(label);
+            }
         }
 
         function showResizeTip (label) {
@@ -1091,7 +1133,7 @@ export default class D3Diagram {
         let offsetWidth = +config.width.split('%')[0] / 100 * this.$d3.select(dom).node().offsetWidth;
         let width = offsetWidth * this.viewPercent;
         let height = config.height * this.viewPercent;
-        this.instance.attr('viewBox', `${(offsetWidth - width) / 2} ${(config.height - height) / 2} ${width} ${height}`);
+        this.instance.transition().duration(300).attr('viewBox', `${(offsetWidth - width) / 2} ${(config.height - height) / 2} ${width} ${height}`);
     }
 
     repaintRect (d) {
@@ -1135,24 +1177,19 @@ export default class D3Diagram {
             y_trans = parseInt(viewBox[1]);
 
         return {
-            x: +((event.x + (fix ? fix : 0)) * scale + x_trans).toFixed(1),
-            y: +((event.y + (fix ? fix : 0)) * scale + y_trans).toFixed(1)
+            x: +((event.x + (fix ? fix : 0) - this.containerLeft) * scale + x_trans).toFixed(1),
+            y: +((event.y + (fix ? fix : 0) - this.containerTop) * scale + y_trans).toFixed(1)
         }
     }
 
     cleanCanvas () {
         this.instance.selectAll('*').remove();
-        this.instance
-            .append('text')
-            .attr('x', parseInt(this.instance.attr('viewBox').split(/\s+/)[2]) / 2)
-            .attr('y', parseInt(this.instance.attr('viewBox').split(/\s+/)[3]) / 2 - 50)
-            .attr('font-size', 48)
-            .attr('stroke', '#eeeeee')
-            .attr('fill', '#f0f0f0')
-            .attr('text-anchor', 'middle')
-            .attr('alignment-baseline', 'middle')
-            .style('text-shadow', '3px 3px 4px #eeeeee')
-            .text('Drag element here to start your ETL flow...')
+        this.$d3.select('div.etl-empty').remove();
+        this.$d3
+            .select(this.dom)
+            .append('div')
+            .classed('etl-empty', true)
+            .text('Start your ETL now...');
     }
 
     getSystemName () {
@@ -1183,9 +1220,13 @@ export default class D3Diagram {
                 switch (_this.$d3.event.code) {
                     case keyMap.Equal:
                         _this.$d3.select('.resize-wrapper_increase').node().click();
+                        _this.$d3.select('.resize-wrapper_increase').transition().duration(170).style('background-color', '#cccccc');
+                        _this.$d3.select('.resize-wrapper_increase').transition().delay(170).duration(170).style('background-color');
                         break;
                     case keyMap.Minus:
                         _this.$d3.select('.resize-wrapper_decrease').node().click();
+                        _this.$d3.select('.resize-wrapper_decrease').transition().duration(170).style('background-color', '#cccccc');
+                        _this.$d3.select('.resize-wrapper_decrease').transition().delay(170).duration(170).style('background-color');
                         break;
                     case keyMap.Digit0:
                         _this.resetViewbox();
@@ -1244,7 +1285,7 @@ export default class D3Diagram {
         });
 
         this.onMouseDownFuncs.push(function () {
-            if (_this.$d3.event.target.nodeName != 'use') {
+            if (_this.$d3.event.target.nodeName == 'svg') {
                 _this.instance.selectAll('rect[data-uid]').classed('cliped', false);
                 !_this.dragging && _this.instance
                     .selectAll('rect.clip')
@@ -1256,9 +1297,7 @@ export default class D3Diagram {
                     .attr('y', d => d.y)
                     .attr('height', d => d.height)
                     .attr('width', d => d.width)
-                    .attr('stroke', '#eeeeee')
-                    .attr('fill', 'rgba(40, 136, 229, 0.2)')
-                    .attr('stroke-width', 1);
+                    .attr('fill', 'rgba(40, 136, 229, 0.2)');
             }
         });
         this.onMouseMoveFunc.push(function () {
@@ -1287,8 +1326,42 @@ export default class D3Diagram {
                     });
             }
         });
+
         this.onMouseUpFuncs.push(function () {
             _this.instance.select('rect.clip').remove();
+        });
+
+        this.onMouseLeaveFunc.push(function () {
+            if (!_this.instance.select('rect.clip').empty()) {
+                _this.instance
+                    .select('rect.clip')
+                    .attr('x', d => {
+                        return _this.getCoords(_this.$d3.event).x > d.x ? d.x : _this.getCoords(_this.$d3.event).x;
+                    })
+                    .attr('y', d => {
+                        return _this.getCoords(_this.$d3.event).y > d.y ? d.y : _this.getCoords(_this.$d3.event).y;
+                    })
+                    .attr('height', d => {
+                        return Math.abs(_this.getCoords(_this.$d3.event).y - d.y);
+                    })
+                    .attr('width', d => {
+                        return Math.abs(_this.getCoords(_this.$d3.event).x - d.x);
+                    })
+                    .each(d => {
+                        checkClip({
+                            x: _this.getCoords(_this.$d3.event).x > d.x ? d.x : _this.getCoords(_this.$d3.event).x,
+                            y: _this.getCoords(_this.$d3.event).y > d.y ? d.y : _this.getCoords(_this.$d3.event).y,
+                            height: Math.abs(_this.getCoords(_this.$d3.event).y - d.y),
+                            width: Math.abs(_this.getCoords(_this.$d3.event).x - d.x)
+                        });
+                    });
+                setTimeout(() => {
+                    _this.instance.select('rect.clip').remove();
+                }, 200);
+            }
+            if (_this.dragging) {
+                _this.dragging = false;
+            }
         });
 
         function loadSelectD () {
