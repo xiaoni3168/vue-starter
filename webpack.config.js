@@ -74,6 +74,11 @@ module.exports = {
     devServer: {
         host: '0.0.0.0',
         port: 8080,
-        disableHostCheck: true
+        proxy: {
+			'https://s3.amazonaws.com/': {
+				target: 'https://s3.amazonaws.com/',
+				changeOrigin: true
+			}
+		}
     }
 }

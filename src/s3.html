@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        <div class="">
+            <input type="file" name="" value="" onchange="fileChange()">
+            <img src="https://s3-ap-northeast-1.amazonaws.com/anis3/0.gif" alt="">
+        </div>
+        <script type="text/javascript" src="https://sdk.amazonaws.com/js/aws-sdk-2.155.0.min.js"></script>
+        <script type="text/javascript">
+        // AWS.config.update({
+        //     accessKeyId: "AKIAJGB2NRFWVEBCSTIA",
+        //     secretAccessKey: "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"
+        // });
+        // var s3 = new AWS.S3({
+        //     params: {
+        //         Bucket: 'anis3',
+        //         Region: 'ap-northeast-1'
+        //     }
+        // });
+        // s3.listObjects(function (err, data) {
+        //     if (err) {
+        //         console.log(err);
+        //     } else {
+        //         console.log(data);
+        //     }
+        // });
+        //
+        // function fileChange () {
+        //     var fr = new FileReader();
+        //     fr.onloadend = function () {
+        //         s3.upload({
+        //             Bucket: 'anis3',
+        //             Key: 'del2.gif',
+        //             Body: fr.result
+        //         },function (resp) {
+        //           console.log(arguments);
+        //           console.log('Successfully uploaded package.');
+        //         })
+        //     }
+        //     fr.readAsDataURL(window.event.target.files[0]);
+        // }
+        </script>
+    </body>
+</html>
